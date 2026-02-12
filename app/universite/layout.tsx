@@ -26,7 +26,7 @@ export default function UniversiteLayout({
   }
 
   return (
-    <DashboardLayout user={user} role="universite">
+    <DashboardLayout>
       {children}
     </DashboardLayout>
   )

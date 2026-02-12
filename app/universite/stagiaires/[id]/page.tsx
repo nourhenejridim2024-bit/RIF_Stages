@@ -1,8 +1,8 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { mockStagiaires, mockConventions, mockTachesOnboarding } from '@/lib/mock-data'
-import { useParams } from 'next/navigation'
+import { getStagiaireDetail, getStagiaireOnboardingTasks } from '@/app/actions/universite-actions'
+import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
 import { ArrowLeft, CheckCircle2, Clock, Circle, AlertCircle, User, Mail, Phone, BookOpen, Briefcase } from 'lucide-react'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 
 const statusConfig = {
   a_faire: { label: 'À faire', icon: Circle, color: 'text-muted-foreground' },
@@ -20,13 +21,54 @@ const statusConfig = {
 export default function StagiaireDetailPage() {
   const { user } = useAuth()
   const params = useParams()
+  const router = useRouter()
   const stagiaireId = params.id as string
+  
+  const [loading, setLoading] = useState(true)
+  const [stagiaire, setStagiaire] = useState<any>(null)
+  const [taches, setTaches] = useState<any[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user || user.role !== 'universite') {
+      router.push('/connexion')
+      return
+    }
+
+    const loadData = async () => {
+      try {
+        const [stagiaireData, tachesData] = await Promise.all([
+          getStagiaireDetail(stagiaireId, user.id),
+          getStagiaireOnboardingTasks(stagiaireId, user.id)
+        ])
+
+        if (!stagiaireData) {
+          setError('Stagiaire non trouvé ou vous n\'avez pas accès à cet enregistrement.')
+          return
+        }
+
+        setStagiaire(stagiaireData)
+        setTaches(tachesData)
+      } catch (err) {
+        console.error('Erreur chargement stagiaire:', err)
+        setError('Erreur lors du chargement des données')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [user, router, stagiaireId])
 
   if (!user || user.role !== 'universite') return null
 
-  const stagiaire = mockStagiaires.find(s => s.id === stagiaireId && s.universitId === user.id)
-  
-  if (!stagiaire) {
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">Chargement...</div>
+    )
+  }
+
+  if (error || !stagiaire) {
     return (
       <div className="space-y-4">
         <Link href="/universite/stagiaires">
@@ -38,15 +80,14 @@ export default function StagiaireDetailPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Stagiaire non trouvé ou vous n'avez pas accès à cet enregistrement.
+            {error || 'Stagiaire non trouvé'}
           </AlertDescription>
         </Alert>
       </div>
     )
   }
 
-  const convention = mockConventions.find(c => c.stagiaireId === stagiaireId)
-  const taches = mockTachesOnboarding.filter(t => t.stagiaireId === stagiaireId)
+  const convention = stagiaire.conventions && stagiaire.conventions.length > 0 ? stagiaire.conventions[0] : null
   const tachesTerminees = taches.filter(t => t.status === 'termine').length
   const tachesEnCours = taches.filter(t => t.status === 'en_cours').length
   const progress = taches.length > 0 ? (tachesTerminees / taches.length) * 100 : 0
@@ -104,14 +145,14 @@ export default function StagiaireDetailPage() {
                 <BookOpen className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Formation</p>
-                  <p className="font-medium">{stagiaire.specialite}</p>
+                  <p className="font-medium">{stagiaire.formation || 'Non renseigné'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <Briefcase className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">École</p>
-                  <p className="font-medium">{stagiaire.ecole}</p>
+                  <p className="font-medium">{stagiaire.ecole?.name || 'École inconnue'}</p>
                 </div>
               </div>
               {convention && (
@@ -119,7 +160,7 @@ export default function StagiaireDetailPage() {
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
                   <div>
                     <p className="text-sm text-muted-foreground">Convention</p>
-                    <p className="font-medium text-green-600">Signée le {convention.dateSignature}</p>
+                    <p className="font-medium text-green-600">Signée le {new Date(convention.createdAt).toLocaleDateString('fr-FR')}</p>
                   </div>
                 </div>
               )}
