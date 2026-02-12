@@ -28,10 +28,7 @@ export default function LoginPage() {
         throw new Error(result.error || "Une erreur est survenue");
       }
 
-      // The AuthContext will handle storing the user data
-      // Redirect will be handled by the page.tsx useEffect based on role
       router.push("/");
-
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -42,6 +39,15 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-lg">
+
+        {/* ✅ Retour à l'accueil */}
+        <Link
+          href="/"
+          className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500"
+        >
+          ← Retour à l&apos;accueil
+        </Link>
+
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
             Connexion
@@ -60,7 +66,10 @@ export default function LoginPage() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Adresse email
               </label>
               <input
@@ -74,13 +83,22 @@ export default function LoginPage() {
 
             <div>
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Mot de passe
                 </label>
-                <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+
+                {/* ✅ (اختياري) route متاع reset password */}
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                >
                   Mot de passe oublié ?
-                </a>
+                </Link>
               </div>
+
               <input
                 id="password"
                 name="password"
@@ -96,11 +114,7 @@ export default function LoginPage() {
             disabled={isLoading}
             className="flex w-full items-center justify-center rounded-md bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
           >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Se connecter"
-            )}
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Se connecter"}
           </button>
 
           <div className="text-center text-sm">
