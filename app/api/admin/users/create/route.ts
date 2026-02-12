@@ -1,52 +1,84 @@
-import prisma from "@/lib/prisma"; // (default export)
-import { sendStagiaireLoginEmail } from "@/lib/mailer";
-import bcrypt from "bcryptjs";
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { hashPassword } from '@/lib/auth-utils';
+import { z } from 'zod';
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { email, prenom, nom } = body;
+const createUserSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    name: z.string().min(1),
+    roleName: z.string(),
+});
 
-    if (!email) {
-      return NextResponse.json({ error: "Email obligatoire" }, { status: 400 });
+export async function POST(request: Request) {
+    try {
+        // TODO: In real app, verify that the current user is an admin
+
+        const body = await request.json();
+        const { email, password, name, roleName } = createUserSchema.parse(body);
+
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (existingUser) {
+            return NextResponse.json(
+                { error: 'Un utilisateur avec cet email existe déjà' },
+                { status: 400 }
+            );
+        }
+
+        // Find the Role ID
+        const role = await prisma.role.findUnique({
+            where: { name: roleName },
+        });
+
+        if (!role) {
+            return NextResponse.json(
+                { error: 'Rôle invalide' },
+                { status: 400 }
+            );
+        }
+
+        // Hash password
+        const hashedPassword = await hashPassword(password);
+
+        // Create user - admin-created users are auto-validated
+        const user = await prisma.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+                roleId: role.id,
+                name,
+                isValidated: true, // Admin-created users are pre-validated
+            },
+            include: { role: true }
+        });
+
+        console.log(`[ADMIN] Created user: ${email} (${roleName})`);
+
+        return NextResponse.json({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role.name,
+            isValidated: user.isValidated,
+            createdAt: user.createdAt,
+        });
+    } catch (error) {
+        console.error('User creation error:', error);
+
+        if (error instanceof z.ZodError) {
+            return NextResponse.json(
+                { error: 'Données invalides', details: error.errors },
+                { status: 400 }
+            );
+        }
+
+        return NextResponse.json(
+            { error: 'Erreur lors de la création de l\'utilisateur' },
+            { status: 500 }
+        );
     }
-
-    const fullName = `${prenom ?? ""} ${nom ?? ""}`.trim() || null;
-
-    // 1) role record لازم يكون موجود (stagiaire)
-    const role = await prisma.role.upsert({
-      where: { name: "stagiaire" },
-      update: {},
-      create: { name: "stagiaire" },
-    });
-
-    // 2) generate + hash password
-    const rawPassword = Math.random().toString(36).slice(-8);
-    const hashedPassword = await bcrypt.hash(rawPassword, 10);
-
-    // 3) create user with roleId
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name: fullName,
-        roleId: role.id,
-        isValidated: true, // ولا خليه false حسب المنطق متاعك
-      },
-    });
-
-    // 4) send email with RAW password
-    await sendStagiaireLoginEmail({
-      to: user.email,
-      prenom: prenom ?? user.name ?? "",
-      email: user.email,
-      password: rawPassword,
-    });
-
-    return NextResponse.json({ success: true, userId: user.id });
-  } catch (err: any) {
-    console.error("Create user error:", err);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
-  }
 }
