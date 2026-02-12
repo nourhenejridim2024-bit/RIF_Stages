@@ -26,7 +26,8 @@ import {
   Clock,
   AlertTriangle,
   Check,
-  X
+  X,
+  Mail
 } from 'lucide-react'
 
 export default function AdminDashboardPage() {
@@ -68,6 +69,28 @@ export default function AdminDashboardPage() {
       }
     } catch (error) {
       console.error("Validation failed", error)
+    }
+  }
+
+  const handleSendEmail = async (email: string) => {
+    try {
+      const res = await fetch('/api/admin/users/email-validation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          subject: 'Bienvenue sur la plateforme RIF-Stages',
+          html: '<p>Bonjour,</p><p>Votre compte a été validé avec succès. Vous pouvez maintenant vous connecter.</p>'
+        })
+      })
+      if (res.ok) {
+        alert('Email envoyé avec succès')
+      } else {
+        alert('Erreur lors de l\'envoi de l\'email')
+      }
+    } catch (error) {
+      console.error("Failed to send email", error)
+      alert('Erreur lors de l\'envoi de l\'email')
     }
   }
 
@@ -199,6 +222,9 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleSendEmail(user.email)}>
+                      <Mail className="h-4 w-4 mr-1" /> Mail
+                    </Button>
                     <Button size="sm" variant="destructive" onClick={() => handleValidate(user.id, 'reject')}>
                       <X className="h-4 w-4 mr-1" /> Refuser
                     </Button>
@@ -274,9 +300,9 @@ export default function AdminDashboardPage() {
               {recentActivity.map((activity) => (
                 <div key={activity.id} className="flex items-start gap-3">
                   <div className={`p-1.5 rounded-full mt-0.5 ${activity.type === 'candidature' ? 'bg-primary/10' :
-                      activity.type === 'convention' ? 'bg-accent/10' :
-                        activity.type === 'evaluation' ? 'bg-chart-4/10' :
-                          'bg-muted'
+                    activity.type === 'convention' ? 'bg-accent/10' :
+                      activity.type === 'evaluation' ? 'bg-chart-4/10' :
+                        'bg-muted'
                     }`}>
                     {activity.type === 'candidature' && <FileText className="h-3 w-3 text-primary" />}
                     {activity.type === 'convention' && <CheckCircle2 className="h-3 w-3 text-accent" />}
