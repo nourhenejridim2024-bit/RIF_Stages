@@ -1,14 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { mockCandidaturesExternes } from '@/lib/mock-data'
-import { DEPARTEMENTS, type CandidatureExterne } from '@/lib/types'
+import type { CandidatureExterne } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -43,6 +40,7 @@ import {
   User,
   X,
 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export default function AdminCandidatsPage() {
   const [candidatures, setCandidatures] = useState<CandidatureExterne[]>([])
@@ -55,16 +53,6 @@ export default function AdminCandidatsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [generatedPassword, setGeneratedPassword] = useState('')
-  const [tuteurId, setTuteurId] = useState('')
-
-  // Mock tuteurs data (Garder les tuteurs mockés pour l'instant car pas d'API tuteurs)
-  const mockTuteurs = [
-    { id: 'tut-1', nom: 'Moreau', prenom: 'Philippe', departement: 'Informatique' },
-    { id: 'tut-2', nom: 'Durand', prenom: 'Claire', departement: 'Marketing' },
-    { id: 'tut-3', nom: 'Bernard', prenom: 'Marc', departement: 'Finance' },
-    { id: 'tut-4', nom: 'Lefebvre', prenom: 'Sophie', departement: 'Communication' },
-    { id: 'tut-5', nom: 'Girard', prenom: 'Antoine', departement: 'Ressources Humaines' },
-  ]
 
   useEffect(() => {
     fetchCandidatures()
@@ -76,8 +64,7 @@ export default function AdminCandidatsPage() {
       const response = await fetch('/api/candidatures')
       if (response.ok) {
         const data = await response.json()
-        // Filtrer pour ne garder que les candidatures traitées (acceptee, refusee, compte_cree)
-        // L'admin ne s'occupe pas des "nouvelles" ou "en_revision"
+
         const traites = data.filter((c: CandidatureExterne) =>
           ['acceptee', 'refusee', 'compte_cree'].includes(c.status)
         )
@@ -95,11 +82,9 @@ export default function AdminCandidatsPage() {
   const compteCrees = candidatures.filter(c => c.status === 'compte_cree').length
   const refusees = candidatures.filter(c => c.status === 'refusee').length
 
-  // Filter candidatures
   const filteredCandidatures = candidatures
     .filter(c => {
       if (statusFilter !== 'all' && c.status !== statusFilter) return false
-
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase()
         return (
@@ -109,11 +94,9 @@ export default function AdminCandidatsPage() {
           c.formation.toLowerCase().includes(searchLower)
         )
       }
-
       return true
     })
     .sort((a, b) => {
-      // Sort by status (acceptee first) then by date
       if (a.status === 'acceptee' && b.status !== 'acceptee') return -1
       if (a.status !== 'acceptee' && b.status === 'acceptee') return 1
       return new Date(b.dateDecision || b.dateSoumission).getTime() - new Date(a.dateDecision || a.dateSoumission).getTime()
@@ -126,56 +109,63 @@ export default function AdminCandidatsPage() {
 
   const handleCreateAccount = (candidature: CandidatureExterne) => {
     setSelectedCandidature(candidature)
-    setTuteurId('')
     setIsSuccess(false)
     setGeneratedPassword('')
     setIsCreateAccountDialogOpen(true)
-  }
-
-  const generatePassword = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%'
-    let password = ''
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return password
-  }
-
-  const confirmCreateAccount = async () => {
-    if (!selectedCandidature || !tuteurId) return
-
-    setIsCreating(true)
-
-    // Generate password
-    const password = generatePassword()
-    setGeneratedPassword(password)
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    // Update candidature status
-    setCandidatures(prev => prev.map(c => {
-      if (c.id === selectedCandidature.id) {
-        return {
-          ...c,
-          status: 'compte_cree',
-          compteCreeLe: new Date().toISOString().split('T')[0],
-        }
-      }
-      return c
-    }))
-
-    setIsCreating(false)
-    setIsSuccess(true)
   }
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
   }
 
-  const filteredTuteurs = mockTuteurs.filter(t =>
-    !selectedCandidature?.departementAffecte || t.departement === selectedCandidature.departementAffecte
-  )
+  const confirmCreateAccount = async () => {
+    if (!selectedCandidature) return
+
+    setIsCreating(true)
+    try {
+      // ✅ call real API
+      // لازم تعمل endpoint: POST /api/admin/users/create
+      // يخلق user + يبعث email + يرجع password raw
+      const res = await fetch('/api/admin/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: selectedCandidature.email,
+          prenom: selectedCandidature.prenom,
+          nom: selectedCandidature.nom,
+          candidatureId: selectedCandidature.id, // optional
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        throw new Error(err?.error || 'Erreur lors de la creation du compte')
+      }
+
+      const data = await res.json()
+      // expected: { password: string }
+      setGeneratedPassword(data.password || '')
+
+      // ✅ update candidature list UI
+      setCandidatures(prev => prev.map(c => {
+        if (c.id === selectedCandidature.id) {
+          return {
+            ...c,
+            status: 'compte_cree',
+            compteCreeLe: new Date().toISOString().split('T')[0],
+          }
+        }
+        return c
+      }))
+
+      setIsSuccess(true)
+    } catch (e: any) {
+      console.error(e)
+      alert(e?.message || 'Erreur')
+    } finally {
+      setIsCreating(false)
+    }
+  }
 
   const niveauLabels: Record<string, string> = {
     'bac+2': 'Bac+2',
@@ -351,6 +341,7 @@ export default function AdminCandidatsPage() {
                           <Eye className="h-4 w-4" />
                           <span className="sr-only">Voir</span>
                         </Button>
+
                         {candidature.status === 'acceptee' && (
                           <Button
                             size="sm"
@@ -364,6 +355,7 @@ export default function AdminCandidatsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
+
                 {filteredCandidatures.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
@@ -527,6 +519,7 @@ export default function AdminCandidatsPage() {
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
+
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Mot de passe</p>
@@ -582,25 +575,6 @@ export default function AdminCandidatsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Assigner un tuteur *</Label>
-                  <Select value={tuteurId} onValueChange={setTuteurId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selectionnez un tuteur" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredTuteurs.map((tuteur) => (
-                        <SelectItem key={tuteur.id} value={tuteur.id}>
-                          {tuteur.prenom} {tuteur.nom} - {tuteur.departement}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Tuteurs du departement {selectedCandidature?.departementAffecte}
-                  </p>
-                </div>
-
                 <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
                   <p className="text-sm text-blue-700 flex items-center gap-2">
                     <KeyRound className="h-4 w-4" />
@@ -610,13 +584,14 @@ export default function AdminCandidatsPage() {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateAccountDialogOpen(false)} className="bg-transparent">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCreateAccountDialogOpen(false)}
+                  className="bg-transparent"
+                >
                   Annuler
                 </Button>
-                <Button
-                  onClick={confirmCreateAccount}
-                  disabled={isCreating || !tuteurId}
-                >
+                <Button onClick={confirmCreateAccount} disabled={isCreating}>
                   {isCreating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

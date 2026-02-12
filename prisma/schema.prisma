@@ -14,18 +14,17 @@ model Role {
 }
 
 model User {
-  id                  String       @id @default(uuid())
-  email               String       @unique
-  password            String
-  name                String?
-  roleId              String
-  isValidated         Boolean      @default(false)
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-  validationEmailSent Boolean      @default(false)
-  conventions         Convention[]
-  stagiaires          Stagiaire[]
-  role                Role         @relation(fields: [roleId], references: [id])
+  id                                     String      @id @default(uuid())
+  email                                  String      @unique
+  password                               String
+  name                                   String?
+  roleId                                 String
+  isValidated                            Boolean     @default(false)
+  createdAt                              DateTime    @default(now())
+  updatedAt                              DateTime    @updatedAt
+  stagiaires                             Stagiaire[]
+  Stagiaire_Stagiaire_universiteIdToUser Stagiaire[] @relation("Stagiaire_universiteIdToUser")
+  role                                   Role        @relation(fields: [roleId], references: [id])
 }
 
 model Convention {
@@ -42,20 +41,21 @@ model Convention {
   sujet          String
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  stagiaire      User      @relation(fields: [stagiaireId], references: [id])
 }
 
 model Stagiaire {
-  id        String   @id @default(uuid())
-  prenom    String
-  nom       String
-  email     String   @unique
-  formation String
-  niveau    String
-  ecoleId   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ecole     User     @relation(fields: [ecoleId], references: [id])
+  id                                String   @id @default(uuid())
+  prenom                            String
+  nom                               String
+  email                             String   @unique
+  formation                         String
+  niveau                            String
+  ecoleId                           String
+  createdAt                         DateTime @default(now())
+  updatedAt                         DateTime @updatedAt
+  universiteId                      String?
+  ecole                             User     @relation(fields: [ecoleId], references: [id])
+  User_Stagiaire_universiteIdToUser User?    @relation("Stagiaire_universiteIdToUser", fields: [universiteId], references: [id])
 }
 
 model CandidatureExterne {
