@@ -103,12 +103,23 @@ export default function LoginPage() {
             )}
           </button>
 
+          <div className="text-center text-sm space-y-2">
           <div className="text-center text-sm">
             <span className="text-gray-500">Vous souhaitez postuler ? </span>
             <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
               Créer un compte
             </Link>
           </div>
+           <div>
+              <Link
+                href="/"
+                className="font-medium text-gray-600 hover:text-blue-600"
+              >
+                ← Retour à la page principale
+              </Link>
+            </div>
+          </div>
+          
         </form>
       </div>
     </div>

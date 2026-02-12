@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { mockStagiaires, mockConventions } from '@/lib/mock-data'
+import { getUniversiteConventions } from '@/app/actions/universite-actions'
 import Link from 'next/link'
 import {
   FileText,
@@ -24,42 +24,63 @@ export default function ConventionsPage() {
   const { user } = useAuth()
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [conventions, setConventions] = useState<any[]>([])
 
   useEffect(() => {
     if (!user || user.role !== 'universite') {
       router.push('/connexion')
+      return;
     }
+
+    getUniversiteConventions(user.id)
+      .then(data => {
+        setConventions(data)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error(err)
+        setLoading(false)
+      })
+
   }, [user, router])
 
   if (!user || user.role !== 'universite') {
     return null
   }
 
-  const stagiairesUniversite = mockStagiaires.filter(s => s.universitId === user.id)
-  const conventions = mockConventions.filter(c =>
-    stagiairesUniversite.some(s => s.id === c.stagiaireId)
-  )
+  if (loading) return <div>Chargement...</div>
 
   const filteredConventions = conventions.filter(conv => {
-    const stagiaire = stagiairesUniversite.find(s => s.id === conv.stagiaireId)
-    if (!stagiaire) return false
     const searchLower = searchQuery.toLowerCase()
     return (
-      stagiaire.prenom.toLowerCase().includes(searchLower) ||
-      stagiaire.nom.toLowerCase().includes(searchLower) ||
-      conv.contenu.sujet.toLowerCase().includes(searchLower)
+      conv.stagiaire?.prenom?.toLowerCase().includes(searchLower) ||
+      conv.stagiaire?.nom?.toLowerCase().includes(searchLower) ||
+      conv.sujet?.toLowerCase().includes(searchLower) ||
+      conv.departement?.toLowerCase().includes(searchLower)
     )
   })
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'signee_complete':
+      case 'signee':
         return <Badge className="bg-green-100 text-green-800"><CheckCircle2 className="h-3 w-3 mr-1" />Signée</Badge>
       case 'en_attente':
         return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" />En attente</Badge>
       default:
         return <Badge variant="outline"><AlertCircle className="h-3 w-3 mr-1" />{status}</Badge>
     }
+  }
+
+  const handleViewConvention = (id: string) => {
+    // Ouvrir la convention (implémentation à venir)
+    console.log('Afficher convention:', id)
+  }
+
+  const handleDownloadConvention = (id: string) => {
+    // Télécharger la convention (implémentation à venir)
+    console.log('Télécharger convention:', id)
   }
 
   return (
@@ -110,9 +131,6 @@ export default function ConventionsPage() {
             </Card>
           ) : (
             filteredConventions.map((convention) => {
-              const stagiaire = stagiairesUniversite.find(s => s.id === convention.stagiaireId)
-              if (!stagiaire) return null
-
               return (
                 <Card key={convention.id} className="border border-border hover:border-primary/50 transition-colors">
                   <CardContent className="p-6">
@@ -120,10 +138,10 @@ export default function ConventionsPage() {
                       <div className="flex-1">
                         <div className="mb-3">
                           <h3 className="text-lg font-semibold text-foreground">
-                            {stagiaire.prenom} {stagiaire.nom}
+                            {convention.stagiaire?.prenom} {convention.stagiaire?.nom}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            {stagiaire.specialite}
+                            {convention.stagiaire?.formation}
                           </p>
                         </div>
 
@@ -131,26 +149,26 @@ export default function ConventionsPage() {
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Sujet</p>
                             <p className="text-sm font-medium text-foreground">
-                              {convention.contenu.sujet}
+                              {convention.sujet}
                             </p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Département</p>
                             <p className="text-sm font-medium text-foreground">
-                              {convention.contenu.departement}
+                              {convention.departement}
                             </p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Dates</p>
                             <p className="text-sm font-medium text-foreground">
-                              {new Date(convention.contenu.dateDebut).toLocaleDateString('fr-FR')} à{' '}
-                              {new Date(convention.contenu.dateFin).toLocaleDateString('fr-FR')}
+                              {new Date(convention.dateDebut).toLocaleDateString('fr-FR')} à{' '}
+                              {new Date(convention.dateFin).toLocaleDateString('fr-FR')}
                             </p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Tuteur</p>
                             <p className="text-sm font-medium text-foreground">
-                              {convention.contenu.tuteurNom}
+                              {convention.tuteurNom}
                             </p>
                           </div>
                         </div>
@@ -164,11 +182,21 @@ export default function ConventionsPage() {
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-2 bg-transparent"
+                          onClick={() => handleViewConvention(convention.id)}
+                        >
                           <Eye className="h-4 w-4" />
                           Voir
                         </Button>
-                        <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-2 bg-transparent"
+                          onClick={() => handleDownloadConvention(convention.id)}
+                        >
                           <Download className="h-4 w-4" />
                           Télécharger
                         </Button>

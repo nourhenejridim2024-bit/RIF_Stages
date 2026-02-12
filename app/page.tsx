@@ -257,7 +257,6 @@ export default function LandingPage() {
               <Button size="sm" onClick={() => setIsDialogOpen(true)}>
                 Postuler
               </Button>
-              <button>x</button>
             </div>
           </div>
         </div>
@@ -436,9 +435,9 @@ export default function LandingPage() {
             <div>
               <h4 className="font-semibold mb-4">Contact</h4>
               <ul className="space-y-2 text-sm text-sidebar-foreground/70">
-                <li>stages@groupe-rif.fr</li>
-                <li>+33 5 56 00 00 00</li>
-                <li>Bordeaux, France</li>
+                <li>contact@grouperif.com</li>
+                <li>+33 6 51 94 88 73</li>
+                <li>Paris, France</li>
               </ul>
             </div>
             <div>
@@ -629,7 +628,7 @@ export default function LandingPage() {
                         <Input
                           id="cv"
                           type="file"
-                          accept=".pdf,.doc,.docx"
+                          accept=".pdf"
                           onChange={handleCvChange}
                           className="hidden"
                           required
@@ -661,7 +660,7 @@ export default function LandingPage() {
                         <Input
                           id="lettre"
                           type="file"
-                          accept=".pdf,.doc,.docx"
+                          accept=".pdf"
                           onChange={handleLettreChange}
                           className="hidden"
                           required

@@ -22,16 +22,16 @@ model User {
   role        Role        @relation(fields: [roleId], references: [id])
   isValidated Boolean     @default(false)
   createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  stagiaires  Stagiaire[]
-  conventions Convention[]
+  updatedAt            DateTime     @updatedAt
+  stagiairesEcole      Stagiaire[]  @relation("EcoleStagiaires")
+  stagiairesUniversite Stagiaire[]  @relation("UniversiteStagiaires")
 }
 
 model Convention {
   id             String    @id @default(uuid())
   candidatureId  String?
   stagiaireId    String
-  stagiaire      User      @relation(fields: [stagiaireId], references: [id])
+  stagiaire      Stagiaire @relation(fields: [stagiaireId], references: [id])
   status         String    @default("generee")
   dateGeneration DateTime  @default(now())
   dateSignature  DateTime?
@@ -51,10 +51,13 @@ model Stagiaire {
   email     String   @unique
   formation String
   niveau    String // '3eme', 'terminale', 'bts', etc.
-  ecoleId   String
-  ecole     User     @relation(fields: [ecoleId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  ecoleId      String
+  ecole        User     @relation("EcoleStagiaires", fields: [ecoleId], references: [id])
+  universiteId String?
+  universite   User?    @relation("UniversiteStagiaires", fields: [universiteId], references: [id])
+  conventions  Convention[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model CandidatureExterne {

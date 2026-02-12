@@ -77,6 +77,7 @@ const navItemsByRole: Record<UserRole, NavItem[]> = {
     { label: 'Tableau de bord', href: '/universite', icon: LayoutDashboard },
     { label: 'Stagiaires', href: '/universite/stagiaires', icon: Users },
     { label: 'Conventions', href: '/universite/conventions', icon: FileText },
+    { label: 'Rapports', href: '/universite/rapports', icon: BarChart3 },
   ],
   ecole: [
     { label: 'Tableau de bord', href: '/ecole', icon: LayoutDashboard },
