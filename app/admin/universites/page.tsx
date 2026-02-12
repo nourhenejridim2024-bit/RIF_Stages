@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { mockUniversites, mockStagiaires } from '@/lib/mock-data'
 import {
   Building2,
   Users,
@@ -17,6 +16,7 @@ import {
   MoreHorizontal,
   Plus,
   Search,
+  Loader2,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
@@ -30,10 +30,29 @@ export default function UniversitesPage() {
   const { user } = useAuth()
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
+  const [universites, setUniversites] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchUniversites = async () => {
+    try {
+      setIsLoading(true)
+      const res = await fetch('/api/admin/universites')
+      if (res.ok) {
+        const data = await res.json()
+        setUniversites(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch universities", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       router.push('/connexion')
+    } else {
+      fetchUniversites()
     }
   }, [user, router])
 
@@ -41,11 +60,13 @@ export default function UniversitesPage() {
     return null
   }
 
-  const filteredUniversites = mockUniversites.filter(
+  const filteredUniversites = universites.filter(
     u =>
       u.nomUniversite.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const totalStagiaires = universites.reduce((acc, curr) => acc + (curr.stagiairesCount || 0), 0)
 
   return (
     <div className="space-y-6">
@@ -79,13 +100,14 @@ export default function UniversitesPage() {
       </Card>
 
       {/* Universités Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredUniversites.map(universite => {
-          const stagiairesCount = mockStagiaires.filter(
-            s => s.universitId === universite.id
-          ).length
-
-          return (
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Chargement des universités...</p>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredUniversites.map(universite => (
             <Card key={universite.id} className="bg-card hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -94,9 +116,11 @@ export default function UniversitesPage() {
                       <Building2 className="h-5 w-5 text-primary" />
                       <CardTitle className="text-lg">{universite.nomUniversite}</CardTitle>
                     </div>
-                    <CardDescription className="text-xs">
-                      {universite.prenom} {universite.nom}
-                    </CardDescription>
+                    {universite.nom && (
+                      <CardDescription className="text-xs">
+                        {universite.prenom} {universite.nom}
+                      </CardDescription>
+                    )}
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -128,19 +152,19 @@ export default function UniversitesPage() {
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="h-4 w-4" />
-                    <span>Téléphone à ajouter</span>
+                    <span>{universite.telephone || 'Non renseigné'}</span>
                   </div>
                 </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-2 pt-4 border-t border-border">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{stagiairesCount}</div>
+                    <div className="text-2xl font-bold text-primary">{universite.stagiairesCount}</div>
                     <div className="text-xs text-muted-foreground">Stagiaires</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-primary">
-                      {stagiairesCount > 0 ? '100%' : '0%'}
+                      {universite.stagiairesCount > 0 ? '100%' : '0%'}
                     </div>
                     <div className="text-xs text-muted-foreground">Activité</div>
                   </div>
@@ -152,22 +176,22 @@ export default function UniversitesPage() {
                     Actif
                   </Badge>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    Accepté
+                    Base Réelle
                   </Badge>
                 </div>
 
                 {/* Action Button */}
                 <Button variant="outline" className="w-full bg-transparent">
                   <GraduationCap className="mr-2 h-4 w-4" />
-                  Voir stagiaires ({stagiairesCount})
+                  Voir stagiaires ({universite.stagiairesCount})
                 </Button>
               </CardContent>
             </Card>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {filteredUniversites.length === 0 && (
+      {!isLoading && filteredUniversites.length === 0 && (
         <Card className="bg-card">
           <CardContent className="py-12 text-center">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -179,21 +203,21 @@ export default function UniversitesPage() {
       {/* Summary Stats */}
       <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
         <CardHeader>
-          <CardTitle>Résumé</CardTitle>
+          <CardTitle>Résumé (Données Réelles)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <div className="text-2xl font-bold text-primary">{mockUniversites.length}</div>
+              <div className="text-2xl font-bold text-primary">{universites.length}</div>
               <div className="text-sm text-muted-foreground">Universités partenaires</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-primary">{mockStagiaires.length}</div>
+              <div className="text-2xl font-bold text-primary">{totalStagiaires}</div>
               <div className="text-sm text-muted-foreground">Stagiaires totaux</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-primary">4</div>
-              <div className="text-sm text-muted-foreground">Comptes actifs</div>
+              <div className="text-2xl font-bold text-primary">{universites.length}</div>
+              <div className="text-sm text-muted-foreground">Comptes configurés</div>
             </div>
           </div>
         </CardContent>

@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     return NextResponse.json(candidature, { status: 201 });
   } catch (error) {
     console.error('Error creating candidature:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Données invalides', details: error.errors },

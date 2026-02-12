@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -153,6 +153,12 @@ export default function RegisterPage() {
                         <span className="text-gray-500">Déjà un compte ? </span>
                         <Link href="/connexion" className="font-medium text-blue-600 hover:text-blue-500">
                             Se connecter
+                        </Link>
+                    </div>
+                    <div className="text-center text-sm mt-4">
+                        <Link href="/" className="font-medium text-gray-600 hover:text-gray-500 flex items-center justify-center gap-2">
+                            <ArrowLeft className="h-4 w-4" />
+                            Retour à l'accueil
                         </Link>
                     </div>
                 </form>

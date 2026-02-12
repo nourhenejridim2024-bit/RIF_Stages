@@ -50,7 +50,7 @@ export interface Ecole extends User {
   ville?: string
 }
 
-export type CandidatureStatus = 
+export type CandidatureStatus =
   | 'brouillon'
   | 'soumise'
   | 'en_revision'
@@ -102,7 +102,7 @@ export interface Candidature {
   }
 }
 
-export type ConventionStatus = 
+export type ConventionStatus =
   | 'generee'
   | 'envoyee'
   | 'signee_stagiaire'
@@ -158,7 +158,7 @@ export interface Notification {
 }
 
 // Candidature externe (formulaire public - sans compte)
-export type CandidatureExterneStatus = 
+export type CandidatureExterneStatus =
   | 'nouvelle'
   | 'en_revision'
   | 'acceptee'
@@ -215,7 +215,7 @@ export const DEPARTEMENTS = [
 ]
 
 // Demande de partenariat universitaire
-export type DemandePartenariatStatus = 
+export type DemandePartenariatStatus =
   | 'nouvelle'
   | 'en_revision'
   | 'acceptee'

@@ -48,6 +48,7 @@ import {
   Clock,
   User,
   FileCheck,
+  Building2,
 } from 'lucide-react'
 
 const statusConfig: Record<CandidatureExterneStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -298,6 +299,7 @@ export default function CandidaturesPage() {
                 </SelectContent>
               </Select>
             </div>
+            {/* University Selector Reverted */}
           </div>
         </CardContent>
       </Card>
@@ -341,7 +343,10 @@ export default function CandidaturesPage() {
                     </TableCell>
                     <TableCell>
                       <p className="text-sm">{candidature.formation}</p>
-                      <p className="text-sm text-muted-foreground">{niveauLabels[candidature.niveau] || candidature.niveau}</p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <span className="mx-1">•</span>
+                        {niveauLabels[candidature.niveau] || candidature.niveau}
+                      </p>
                     </TableCell>
                     <TableCell>
                       <p className="text-sm">{candidature.dateDebut}</p>

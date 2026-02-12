@@ -28,24 +28,26 @@ import {
 
 export default function AdminParametresPage() {
   const [hasChanges, setHasChanges] = useState(false)
-  
+
   const [settings, setSettings] = useState({
     // General
-    companyName: 'Groupe RIF',
-    companyEmail: 'contact@rif.fr',
-    companyAddress: '123 Avenue des Entreprises, 33000 Bordeaux',
-    
+    companyName: 'RIF Tunisie',
+    companyEmail: 'contact@grouperif.com',
+    companyAddress: 'B19.Centre Millenium Et2 Sidi Daoued 2046 la Marsa',
+    companyPhone: '+33 6 51 94 88 73',
+    companyFax: '',
+
     // Notifications
     emailNotifications: true,
     newCandidatureNotif: true,
     conventionSignedNotif: true,
     evaluationNotif: true,
-    
+
     // Security
     sessionTimeout: '30',
     maxLoginAttempts: '5',
     requireStrongPassword: true,
-    
+
     // System
     maintenanceMode: false,
     debugMode: false,
@@ -82,18 +84,20 @@ export default function AdminParametresPage() {
       {/* General Settings */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Informations générales
-          </CardTitle>
-          <CardDescription>
-            Paramètres de l'entreprise et de la plateforme
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Informations générales
+            </CardTitle>
+          </div>
+          <CardDescription className="text-amber-600 dark:text-amber-400 font-medium">
+            (A remplir avec la plus grande précision car ces informations seront utilisées dans toutes les correspondances officielles)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="companyName">Nom de l'entreprise</Label>
+              <Label htmlFor="companyName">Entreprise</Label>
               <Input
                 id="companyName"
                 value={settings.companyName}
@@ -101,12 +105,30 @@ export default function AdminParametresPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="companyEmail">Email de contact</Label>
+              <Label htmlFor="companyEmail">Email</Label>
               <Input
                 id="companyEmail"
                 type="email"
                 value={settings.companyEmail}
                 onChange={(e) => handleChange('companyEmail', e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="companyPhone">Tél</Label>
+              <Input
+                id="companyPhone"
+                value={settings.companyPhone}
+                onChange={(e) => handleChange('companyPhone', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="companyFax">Fax</Label>
+              <Input
+                id="companyFax"
+                value={settings.companyFax}
+                onChange={(e) => handleChange('companyFax', e.target.value)}
               />
             </div>
           </div>
@@ -146,9 +168,9 @@ export default function AdminParametresPage() {
               onCheckedChange={(checked) => handleChange('emailNotifications', checked)}
             />
           </div>
-          
+
           <Separator />
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>

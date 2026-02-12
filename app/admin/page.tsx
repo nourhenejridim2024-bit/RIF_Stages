@@ -6,14 +6,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import {
-  mockStagiaires,
-  mockTuteurs,
-  mockRH,
-  mockAdmins,
-  mockCandidatures,
-  mockConventions,
-} from '@/lib/mock-data'
-import {
   Users,
   Shield,
   Settings,
@@ -33,10 +25,28 @@ import {
 export default function AdminDashboardPage() {
   const [pendingUsers, setPendingUsers] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [dashboardData, setDashboardData] = useState<any>({
+    stats: {
+      totalUsers: 0,
+      activeStagiaires: 0,
+      pendingValidations: 0,
+      signedConventions: 0
+    },
+    usersByRole: [],
+    recentActivity: []
+  })
 
-  const totalUsers = mockStagiaires.length + mockTuteurs.length + mockRH.length + mockAdmins.length
-  const candidaturesEnAttente = mockCandidatures.filter(c => c.status === 'soumise').length
-  const conventionsSignees = mockConventions.filter(c => c.status === 'signee_complete').length
+  const fetchDashboardStats = async () => {
+    try {
+      const res = await fetch('/api/admin/dashboard-stats')
+      if (res.ok) {
+        const data = await res.json()
+        setDashboardData(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard stats", error)
+    }
+  }
 
   const fetchPendingUsers = async () => {
     try {
@@ -53,7 +63,7 @@ export default function AdminDashboardPage() {
   }
 
   useEffect(() => {
-    fetchPendingUsers()
+    Promise.all([fetchPendingUsers(), fetchDashboardStats()])
   }, [])
 
   const handleValidate = async (userId: string, action: 'approve' | 'reject') => {
@@ -64,8 +74,9 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({ userId, action })
       })
       if (res.ok) {
-        // Refresh list
+        // Refresh both
         fetchPendingUsers()
+        fetchDashboardStats()
       }
     } catch (error) {
       console.error("Validation failed", error)
@@ -97,23 +108,23 @@ export default function AdminDashboardPage() {
   const stats = [
     {
       label: 'Utilisateurs totaux',
-      value: totalUsers,
+      value: dashboardData.stats.totalUsers,
       icon: Users,
       color: 'text-primary',
       bgColor: 'bg-primary/10',
-      change: '+3 ce mois',
+      change: 'Base de données réelle',
     },
     {
       label: 'Stagiaires actifs',
-      value: mockStagiaires.length,
+      value: dashboardData.stats.activeStagiaires,
       icon: UserCheck,
       color: 'text-accent',
       bgColor: 'bg-accent/10',
-      change: `${mockTuteurs.length} tuteurs`,
+      change: 'Validés uniquement',
     },
     {
       label: 'Validations en attente',
-      value: pendingUsers.length,
+      value: dashboardData.stats.pendingValidations,
       icon: AlertTriangle,
       color: 'text-orange-500',
       bgColor: 'bg-orange-500/10',
@@ -121,28 +132,22 @@ export default function AdminDashboardPage() {
     },
     {
       label: 'Conventions signées',
-      value: conventionsSignees,
+      value: dashboardData.stats.signedConventions,
       icon: CheckCircle2,
       color: 'text-chart-5',
       bgColor: 'bg-chart-5/10',
-      change: `${mockConventions.length} total`,
+      change: 'Status: signee',
     },
   ]
 
-  const recentActivity = [
-    { id: 1, action: 'Nouvelle candidature', user: 'Sophie Bernard', time: 'Il y a 2 heures', type: 'candidature' },
-    { id: 2, action: 'Convention signée', user: 'Marie Dupont', time: 'Il y a 1 jour', type: 'convention' },
-    { id: 3, action: 'Évaluation soumise', user: 'Jean Martin', time: 'Il y a 2 jours', type: 'evaluation' },
-    { id: 4, action: 'Nouveau tuteur créé', user: 'Claire Durand', time: 'Il y a 3 jours', type: 'user' },
-    { id: 5, action: 'Candidature acceptée', user: 'Jean Martin', time: 'Il y a 5 jours', type: 'candidature' },
-  ]
-
-  const usersByRole = [
-    { role: 'Stagiaires', count: mockStagiaires.length, color: 'bg-primary' },
-    { role: 'Tuteurs', count: mockTuteurs.length, color: 'bg-accent' },
-    { role: 'RH', count: mockRH.length, color: 'bg-chart-4' },
-    { role: 'Admins', count: mockAdmins.length, color: 'bg-chart-5' },
-  ]
+  const roleColors: Record<string, string> = {
+    'stagiaire': 'bg-primary',
+    'tuteur': 'bg-accent',
+    'rh': 'bg-chart-4',
+    'admin': 'bg-chart-5',
+    'universite': 'bg-orange-500',
+    'ecole': 'bg-blue-500'
+  }
 
   return (
     <div className="space-y-6">
@@ -256,18 +261,18 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {usersByRole.map((item) => (
+              {dashboardData.usersByRole.map((item: any) => (
                 <div key={item.role} className="flex items-center gap-4">
-                  <div className={`w-3 h-3 rounded-full ${item.color}`} />
+                  <div className={`w-3 h-3 rounded-full ${roleColors[item.role.toLowerCase()] || 'bg-muted'}`} />
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">{item.role}</span>
+                      <span className="text-sm font-medium capitalize">{item.role}</span>
                       <span className="text-sm text-muted-foreground">{item.count}</span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
-                        className={`h-full ${item.color} rounded-full`}
-                        style={{ width: `${(item.count / totalUsers) * 100}%` }}
+                        className={`h-full ${roleColors[item.role.toLowerCase()] || 'bg-muted'} rounded-full`}
+                        style={{ width: `${dashboardData.stats.totalUsers > 0 ? (item.count / dashboardData.stats.totalUsers) * 100 : 0}%` }}
                       />
                     </div>
                   </div>
@@ -276,7 +281,7 @@ export default function AdminDashboardPage() {
             </div>
             <div className="mt-4 pt-4 border-t flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Total</span>
-              <span className="font-medium">{totalUsers} utilisateurs</span>
+              <span className="font-medium">{dashboardData.stats.totalUsers} utilisateurs</span>
             </div>
           </CardContent>
         </Card>
@@ -297,7 +302,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map((activity) => (
+              {dashboardData.recentActivity.map((activity: any) => (
                 <div key={activity.id} className="flex items-start gap-3">
                   <div className={`p-1.5 rounded-full mt-0.5 ${activity.type === 'candidature' ? 'bg-primary/10' :
                     activity.type === 'convention' ? 'bg-accent/10' :
@@ -314,7 +319,7 @@ export default function AdminDashboardPage() {
                     <p className="text-xs text-muted-foreground">{activity.user}</p>
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {activity.time}
+                    {new Date(activity.time).toLocaleDateString()}
                   </span>
                 </div>
               ))}

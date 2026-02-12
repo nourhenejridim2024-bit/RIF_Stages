@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export default function LoginPage() {
@@ -107,6 +107,12 @@ export default function LoginPage() {
             <span className="text-gray-500">Vous souhaitez postuler ? </span>
             <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
               Créer un compte
+            </Link>
+          </div>
+          <div className="text-center text-sm mt-4">
+            <Link href="/" className="font-medium text-gray-600 hover:text-gray-500 flex items-center justify-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Retour à l'accueil
             </Link>
           </div>
         </form>

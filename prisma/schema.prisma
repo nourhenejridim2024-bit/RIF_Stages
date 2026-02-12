@@ -9,29 +9,29 @@ datasource db {
 
 model Role {
   id    String @id @default(uuid())
-  name  String @unique // 'admin', 'rh', 'tuteur', 'stagiaire', 'ecole', 'universite'
+  name  String @unique
   users User[]
 }
 
 model User {
-  id          String      @id @default(uuid())
-  email       String      @unique
-  password    String
-  name        String?
-  roleId      String
-  role        Role        @relation(fields: [roleId], references: [id])
-  isValidated Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  stagiaires  Stagiaire[]
-  conventions Convention[]
+  id           String               @id @default(uuid())
+  email        String               @unique
+  password     String
+  name         String?
+  roleId       String
+  isValidated  Boolean              @default(false)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  candidatures CandidatureExterne[] @relation("CandidatureUniversite")
+  conventions  Convention[]
+  stagiaires   Stagiaire[]
+  role         Role                 @relation(fields: [roleId], references: [id])
 }
 
 model Convention {
   id             String    @id @default(uuid())
   candidatureId  String?
   stagiaireId    String
-  stagiaire      User      @relation(fields: [stagiaireId], references: [id])
   status         String    @default("generee")
   dateGeneration DateTime  @default(now())
   dateSignature  DateTime?
@@ -42,47 +42,51 @@ model Convention {
   sujet          String
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  stagiaire      User      @relation(fields: [stagiaireId], references: [id])
 }
 
 model Stagiaire {
-  id        String   @id @default(uuid())
-  prenom    String
-  nom       String
-  email     String   @unique
-  formation String
-  niveau    String // '3eme', 'terminale', 'bts', etc.
-  ecoleId   String
-  ecole     User     @relation(fields: [ecoleId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  prenom     String
+  nom        String
+  email      String   @unique
+  formation  String
+  niveau     String
+  ecoleId    String?
+  autreEcole String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  ecole      User?    @relation(fields: [ecoleId], references: [id])
 }
 
 model CandidatureExterne {
-  id                   String    @id @default(uuid())
-  nom                  String
-  prenom               String
-  email                String
-  telephone            String
-  adresse              String?
-  ville                String?
-  codePostal           String?
-  formation            String
-  niveau               String
-  dateDebut            String
-  duree                String
-  message              String?
-  cvUrl                String
-  lettreMotivationUrl  String
-  status               String    @default("nouvelle")
-  dateSoumission       DateTime  @default(now())
-  departementAffecte   String?
-  commentairesRH       String?
-  dateDecision         DateTime?
-  compteCreeLe         DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id                  String    @id @default(uuid())
+  nom                 String
+  prenom              String
+  email               String
+  telephone           String
+  adresse             String?
+  ville               String?
+  codePostal          String?
+  formation           String
+  niveau              String
+  dateDebut           String
+  duree               String
+  message             String?
+  cvUrl               String
+  lettreMotivationUrl String
+  status              String    @default("nouvelle")
+  dateSoumission      DateTime  @default(now())
+  departementAffecte  String?
+  commentairesRH      String?
+  dateDecision        DateTime?
+  compteCreeLe        DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  universiteId        String?
+  autreUniversite     String?
+  universite          User?     @relation("CandidatureUniversite", fields: [universiteId], references: [id])
 
   @@index([status])
   @@index([email])
 }
-

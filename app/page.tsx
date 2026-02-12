@@ -80,6 +80,10 @@ export default function LandingPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  useEffect(() => {
+    // No initialization needed for now
+  }, [])
+
   const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setCvFile(e.target.files[0])
@@ -231,10 +235,17 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <Building2 className="h-8 w-8 text-primary" />
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRiRTroVCd1J0S9j3_3muav7auyqv3QZs4hmw&s"
+                alt="RIF Logo"
+                className="h-8 w-auto rounded-md"
+              />
               <span className="font-semibold text-xl text-foreground">RIF-Stages</span>
             </div>
             <nav className="hidden md:flex items-center gap-8">
+              <a href="#apropos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                À propos
+              </a>
               <a href="#fonctionnalites" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Fonctionnalités
               </a>
@@ -257,7 +268,7 @@ export default function LandingPage() {
               <Button size="sm" onClick={() => setIsDialogOpen(true)}>
                 Postuler
               </Button>
-              <button>x</button>
+
             </div>
           </div>
         </div>
@@ -313,8 +324,37 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* About Section */}
+      <section id="apropos" className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-6">
+                À propos du Groupe RIF
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+                Le Groupe RIF est un acteur majeur dans le secteur technologique, dédié à l'innovation et à l'excellence.
+                Notre mission est de former la prochaine génération de talents en offrant des opportunités de stage
+                enrichissantes et formatrices.
+              </p>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Rejoignez une équipe passionnée, travaillez sur des projets concrets et développez vos compétences
+                dans un environnement stimulant et bienveillant.
+              </p>
+            </div>
+            <div className="relative h-[400px] rounded-2xl overflow-hidden bg-white flex items-center justify-center p-8 border border-border">
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRiRTroVCd1J0S9j3_3muav7auyqv3QZs4hmw&s"
+                alt="RIF Logo"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
-      <section id="fonctionnalites" className="py-20 px-4 sm:px-6 lg:px-8">
+      <section id="fonctionnalites" className="py-20 px-4 sm:px-6 lg:px-8 bg-secondary/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
@@ -346,7 +386,7 @@ export default function LandingPage() {
       </section>
 
       {/* Process Section */}
-      <section id="processus" className="py-20 px-4 sm:px-6 lg:px-8 bg-secondary/30">
+      <section id="processus" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
@@ -417,7 +457,11 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Building2 className="h-6 w-6" />
+                <img
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRiRTroVCd1J0S9j3_3muav7auyqv3QZs4hmw&s"
+                  alt="RIF Logo"
+                  className="h-6 w-auto rounded-md"
+                />
                 <span className="font-semibold text-lg">RIF-Stages</span>
               </div>
               <p className="text-sm text-sidebar-foreground/70">
