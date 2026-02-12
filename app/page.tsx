@@ -257,6 +257,7 @@ export default function LandingPage() {
               <Button size="sm" onClick={() => setIsDialogOpen(true)}>
                 Postuler
               </Button>
+              <button>x</button>
             </div>
           </div>
         </div>
