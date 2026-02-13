@@ -49,6 +49,7 @@ import {
   User,
   FileCheck,
   Building2,
+  Loader2,
 } from 'lucide-react'
 
 const statusConfig: Record<CandidatureExterneStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -82,14 +83,31 @@ export default function CandidaturesPage() {
   const [selectedCandidature, setSelectedCandidature] = useState<CandidatureExterne | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
+  const [tuteurs, setTuteurs] = useState<any[]>([])
+  const [selectedTuteurId, setSelectedTuteurId] = useState<string>('')
+  const [isAssigning, setIsAssigning] = useState(false)
   const [actionType, setActionType] = useState<'accept' | 'reject'>('accept')
   const [comment, setComment] = useState('')
   const [departement, setDepartement] = useState('')
 
-  // Charger les candidatures depuis l'API
+  // Charger les candidatures et tuteurs
   useEffect(() => {
     fetchCandidatures()
+    fetchTuteurs()
   }, [])
+
+  const fetchTuteurs = async () => {
+    try {
+      const response = await fetch('/api/rh/tuteurs')
+      if (response.ok) {
+        const data = await response.json()
+        setTuteurs(data)
+      }
+    } catch (error) {
+      console.error('Error fetching tuteurs:', error)
+    }
+  }
 
   const fetchCandidatures = async () => {
     try {
@@ -107,6 +125,45 @@ export default function CandidaturesPage() {
       setIsLoading(false)
     }
   }
+
+  const handleAssign = (candidature: CandidatureExterne) => {
+    setSelectedCandidature(candidature)
+    setSelectedTuteurId(candidature.tuteurId || '')
+    setIsAssigning(false)
+    setIsAssignDialogOpen(true)
+  }
+
+  const confirmAssign = async () => {
+    if (!selectedCandidature || !selectedTuteurId) return
+
+    try {
+      setIsAssigning(true)
+      const response = await fetch(`/api/candidatures/${selectedCandidature.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tuteurId: selectedTuteurId,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erreur lors de l\'assignation')
+      }
+
+      await fetchCandidatures()
+      setIsAssignDialogOpen(false)
+      setSelectedCandidature(null)
+    } catch (error) {
+      console.error('Error assigning tuteur:', error)
+      alert(error instanceof Error ? error.message : 'Erreur lors de l\'assignation du tuteur')
+    } finally {
+      setIsAssigning(false)
+    }
+  }
+
 
   // Statistics
   const stats = {
@@ -372,6 +429,17 @@ export default function CandidaturesPage() {
                           <Eye className="h-4 w-4" />
                           <span className="sr-only">Voir</span>
                         </Button>
+                        {(candidature.status === 'acceptee' || candidature.status === 'compte_cree') && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={() => handleAssign(candidature)}
+                          >
+                            <User className="h-4 w-4" />
+                            <span className="sr-only">Assigner tuteur</span>
+                          </Button>
+                        )}
                         {(candidature.status === 'nouvelle' || candidature.status === 'en_revision') && (
                           <>
                             {candidature.status === 'nouvelle' && (
@@ -641,6 +709,70 @@ export default function CandidaturesPage() {
               disabled={(actionType === 'reject' && !comment.trim()) || (actionType === 'accept' && !departement)}
             >
               {actionType === 'accept' ? 'Accepter' : 'Refuser'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Tuteur Dialog */}
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assigner un tuteur</DialogTitle>
+            <DialogDescription>
+              Assignez un tuteur pour {selectedCandidature?.prenom} {selectedCandidature?.nom}.
+              Cela permettra au tuteur de suivre le stagiaire.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-muted rounded-lg space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-sm font-semibold text-primary">
+                    {selectedCandidature?.prenom.charAt(0)}{selectedCandidature?.nom.charAt(0)}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium">{selectedCandidature?.prenom} {selectedCandidature?.nom}</p>
+                  <p className="text-sm text-muted-foreground">{selectedCandidature?.email}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Sélectionner un tuteur *</Label>
+              <Select value={selectedTuteurId} onValueChange={setSelectedTuteurId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez un tuteur" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tuteurs.map((tuteur: any) => (
+                    <SelectItem key={tuteur.id} value={tuteur.id}>
+                      {tuteur.name} ({tuteur.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)} className="bg-transparent">
+              Annuler
+            </Button>
+            <Button
+              onClick={confirmAssign}
+              disabled={isAssigning || !selectedTuteurId}
+            >
+              {isAssigning ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Assignation...
+                </>
+              ) : (
+                'Confirmer l\'assignation'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

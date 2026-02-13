@@ -8,6 +8,7 @@ const createUserSchema = z.object({
     password: z.string().min(6),
     name: z.string().min(1),
     roleName: z.string(),
+    tuteurId: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
         // TODO: In real app, verify that the current user is an admin
 
         const body = await request.json();
-        const { email, password, name, roleName } = createUserSchema.parse(body);
+        const { email, password, name, roleName, tuteurId } = createUserSchema.parse(body);
 
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
                 password: hashedPassword,
                 roleId: role.id,
                 name,
+                tuteurId: tuteurId || undefined,
                 isValidated: true, // Admin-created users are pre-validated
             },
             include: { role: true }

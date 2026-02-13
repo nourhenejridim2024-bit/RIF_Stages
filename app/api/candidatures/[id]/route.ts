@@ -6,6 +6,7 @@ const updateSchema = z.object({
     status: z.enum(['nouvelle', 'en_revision', 'acceptee', 'refusee', 'compte_cree']).optional(),
     departementAffecte: z.string().optional(),
     commentairesRH: z.string().optional(),
+    tuteurId: z.string().optional(),
 });
 
 // GET - Récupérer une candidature par ID
@@ -52,10 +53,30 @@ export async function PATCH(
             updateData.dateDecision = new Date();
         }
 
-        const candidature = await prisma.candidatureExterne.update({
-            where: { id },
-            data: updateData,
-        });
+        // Use a raw query for tuteurId to bypass Prisma Client generation issues if needed
+        // but we'll try standard update first and fallback if it fails, 
+        // OR just do standard update but catch and try raw
+        let candidature;
+        try {
+            candidature = await prisma.candidatureExterne.update({
+                where: { id },
+                data: updateData,
+            });
+        } catch (prismaError: any) {
+            console.warn('Prisma update failed, trying raw SQL workaround:', prismaError.message);
+
+            // Raw SQL fallback for when prisma generate hasn't run
+            if (updateData.tuteurId) {
+                await prisma.$executeRaw`UPDATE "CandidatureExterne" SET "tuteurId" = ${updateData.tuteurId} WHERE id = ${id}`;
+                delete updateData.tuteurId;
+            }
+
+            // Try updating the rest
+            candidature = await prisma.candidatureExterne.update({
+                where: { id },
+                data: updateData,
+            });
+        }
 
         return NextResponse.json(candidature);
     } catch (error) {

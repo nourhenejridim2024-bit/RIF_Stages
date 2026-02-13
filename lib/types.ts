@@ -187,6 +187,7 @@ export interface CandidatureExterne {
   commentairesRH?: string
   dateDecision?: string
   compteCreeLe?: string
+  tuteurId?: string
 }
 
 export const TACHES_ONBOARDING_DEFAUT = [

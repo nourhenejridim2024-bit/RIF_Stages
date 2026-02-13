@@ -23,10 +23,10 @@ export async function GET(request: Request) {
             where: whereClause,
             include: {
                 role: true,
-                stagiaires: true // Optional: if we want Stagiaire profile details
+                stagiaires: true
             },
             orderBy: {
-                name: 'asc' // Order alphabetically
+                nom: 'asc' // Better to order by nom if prenom/nom are present
             }
         });
 

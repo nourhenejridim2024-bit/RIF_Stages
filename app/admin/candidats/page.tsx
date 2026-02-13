@@ -51,20 +51,6 @@ export default function AdminCandidatsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [selectedCandidature, setSelectedCandidature] = useState<CandidatureExterne | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [isCreateAccountDialogOpen, setIsCreateAccountDialogOpen] = useState(false)
-  const [isCreating, setIsCreating] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [generatedPassword, setGeneratedPassword] = useState('')
-  const [tuteurId, setTuteurId] = useState('')
-
-  // Mock tuteurs data (Garder les tuteurs mockés pour l'instant car pas d'API tuteurs)
-  const mockTuteurs = [
-    { id: 'tut-1', nom: 'Moreau', prenom: 'Philippe', departement: 'Informatique' },
-    { id: 'tut-2', nom: 'Durand', prenom: 'Claire', departement: 'Marketing' },
-    { id: 'tut-3', nom: 'Bernard', prenom: 'Marc', departement: 'Finance' },
-    { id: 'tut-4', nom: 'Lefebvre', prenom: 'Sophie', departement: 'Communication' },
-    { id: 'tut-5', nom: 'Girard', prenom: 'Antoine', departement: 'Ressources Humaines' },
-  ]
 
   useEffect(() => {
     fetchCandidatures()
@@ -124,58 +110,9 @@ export default function AdminCandidatsPage() {
     setIsViewDialogOpen(true)
   }
 
-  const handleCreateAccount = (candidature: CandidatureExterne) => {
-    setSelectedCandidature(candidature)
-    setTuteurId('')
-    setIsSuccess(false)
-    setGeneratedPassword('')
-    setIsCreateAccountDialogOpen(true)
-  }
-
-  const generatePassword = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%'
-    let password = ''
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return password
-  }
-
-  const confirmCreateAccount = async () => {
-    if (!selectedCandidature || !tuteurId) return
-
-    setIsCreating(true)
-
-    // Generate password
-    const password = generatePassword()
-    setGeneratedPassword(password)
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    // Update candidature status
-    setCandidatures(prev => prev.map(c => {
-      if (c.id === selectedCandidature.id) {
-        return {
-          ...c,
-          status: 'compte_cree',
-          compteCreeLe: new Date().toISOString().split('T')[0],
-        }
-      }
-      return c
-    }))
-
-    setIsCreating(false)
-    setIsSuccess(true)
-  }
-
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
   }
-
-  const filteredTuteurs = mockTuteurs.filter(t =>
-    !selectedCandidature?.departementAffecte || t.departement === selectedCandidature.departementAffecte
-  )
 
   const niveauLabels: Record<string, string> = {
     'bac+2': 'Bac+2',
@@ -194,10 +131,11 @@ export default function AdminCandidatsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Candidats acceptes</h1>
         <p className="mt-1 text-muted-foreground">
-          Creez les comptes des candidats acceptes par les RH
+          Consultez la liste des candidats acceptes par les RH
         </p>
       </div>
 
@@ -211,7 +149,7 @@ export default function AdminCandidatsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{acceptees}</p>
-                <p className="text-sm text-muted-foreground">En attente de compte</p>
+                <p className="text-sm text-muted-foreground">En attente</p>
               </div>
             </div>
           </CardContent>
@@ -224,7 +162,7 @@ export default function AdminCandidatsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{compteCrees}</p>
-                <p className="text-sm text-muted-foreground">Comptes crees</p>
+                <p className="text-sm text-muted-foreground">Compte cree</p>
               </div>
             </div>
           </CardContent>
@@ -267,7 +205,7 @@ export default function AdminCandidatsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="acceptee">En attente de compte</SelectItem>
+                  <SelectItem value="acceptee">En attente</SelectItem>
                   <SelectItem value="compte_cree">Compte cree</SelectItem>
                   <SelectItem value="refusee">Refusee</SelectItem>
                 </SelectContent>
@@ -295,7 +233,6 @@ export default function AdminCandidatsPage() {
                   <TableHead>Departement</TableHead>
                   <TableHead>Date acceptation</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -341,32 +278,11 @@ export default function AdminCandidatsPage() {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleView(candidature)}
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">Voir</span>
-                        </Button>
-                        {candidature.status === 'acceptee' && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleCreateAccount(candidature)}
-                          >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Creer compte
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))}
                 {filteredCandidatures.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                       Aucun candidat accepte trouve
                     </TableCell>
                   </TableRow>
@@ -470,19 +386,6 @@ export default function AdminCandidatsPage() {
                 </CardContent>
               </Card>
 
-              {selectedCandidature.status === 'acceptee' && (
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    setIsViewDialogOpen(false)
-                    handleCreateAccount(selectedCandidature)
-                  }}
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Creer le compte
-                </Button>
-              )}
-
               {selectedCandidature.compteCreeLe && (
                 <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
                   <p className="text-sm text-green-700 flex items-center gap-2">
@@ -496,144 +399,6 @@ export default function AdminCandidatsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Account Dialog */}
-      <Dialog open={isCreateAccountDialogOpen} onOpenChange={setIsCreateAccountDialogOpen}>
-        <DialogContent className="max-w-md">
-          {isSuccess ? (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-green-600">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Compte cree avec succes !
-                </DialogTitle>
-                <DialogDescription>
-                  Le compte a ete cree et les identifiants ont ete envoyes par email.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4 py-4">
-                <Card>
-                  <CardContent className="pt-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Email</p>
-                        <p className="font-mono text-sm">{selectedCandidature?.email}</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => copyToClipboard(selectedCandidature?.email || '')}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Mot de passe</p>
-                        <p className="font-mono text-sm">{generatedPassword}</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => copyToClipboard(generatedPassword)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-xs text-muted-foreground flex items-center gap-2">
-                    <Mail className="h-3 w-3" />
-                    Un email avec ces identifiants a ete envoye a {selectedCandidature?.email}
-                  </p>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button onClick={() => setIsCreateAccountDialogOpen(false)}>
-                  Fermer
-                </Button>
-              </DialogFooter>
-            </>
-          ) : (
-            <>
-              <DialogHeader>
-                <DialogTitle>Creer un compte stagiaire</DialogTitle>
-                <DialogDescription>
-                  Creez un compte pour {selectedCandidature?.prenom} {selectedCandidature?.nom}.
-                  Un email avec les identifiants sera envoye automatiquement.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4 py-4">
-                <div className="p-4 bg-muted rounded-lg space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-semibold text-primary">
-                        {selectedCandidature?.prenom.charAt(0)}{selectedCandidature?.nom.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{selectedCandidature?.prenom} {selectedCandidature?.nom}</p>
-                      <p className="text-sm text-muted-foreground">{selectedCandidature?.email}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Assigner un tuteur *</Label>
-                  <Select value={tuteurId} onValueChange={setTuteurId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selectionnez un tuteur" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredTuteurs.map((tuteur) => (
-                        <SelectItem key={tuteur.id} value={tuteur.id}>
-                          {tuteur.prenom} {tuteur.nom} - {tuteur.departement}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Tuteurs du departement {selectedCandidature?.departementAffecte}
-                  </p>
-                </div>
-
-                <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                  <p className="text-sm text-blue-700 flex items-center gap-2">
-                    <KeyRound className="h-4 w-4" />
-                    Un mot de passe securise sera genere automatiquement
-                  </p>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateAccountDialogOpen(false)} className="bg-transparent">
-                  Annuler
-                </Button>
-                <Button
-                  onClick={confirmCreateAccount}
-                  disabled={isCreating || !tuteurId}
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creation en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Creer et envoyer
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

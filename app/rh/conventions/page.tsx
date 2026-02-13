@@ -85,14 +85,14 @@ export default function ConventionsPage() {
       }
 
       // Fetch validated stagiaires
-      const usersRes = await fetch('/api/users?role=stagiaire&validated=true')
+      const usersRes = await fetch('/api/users?role=stagiaire')
       if (usersRes.ok) {
         const data = await usersRes.json()
         setStagiaires(Array.isArray(data) ? data : [])
       }
 
       // Fetch validated tuteurs
-      const tuteursRes = await fetch('/api/users?role=tuteur&validated=true')
+      const tuteursRes = await fetch('/api/users?role=tuteur')
       if (tuteursRes.ok) {
         const data = await tuteursRes.json()
         setTuteurs(Array.isArray(data) ? data : [])
@@ -109,6 +109,7 @@ export default function ConventionsPage() {
 
     try {
       const stagiaire = stagiaires.find(s => s.id === selectedStagiaireId)
+      const stagiaireName = stagiaire ? (stagiaire.prenom && stagiaire.nom ? `${stagiaire.prenom} ${stagiaire.nom}` : stagiaire.name || stagiaire.email) : 'Stagiaire'
 
       const payload = {
         stagiaireId: selectedStagiaireId,
@@ -116,7 +117,7 @@ export default function ConventionsPage() {
         tuteurNom: selectedTuteurNom || 'Non assigné',
         dateDebut,
         dateFin,
-        sujet: stagiaire ? `Stage de ${stagiaire.name}` : 'Stage conventionné'
+        sujet: `Stage de ${stagiaireName}`
       }
 
       const res = await fetch('/api/conventions', {
@@ -147,10 +148,14 @@ export default function ConventionsPage() {
   const filteredConventions = conventions.filter(conv => {
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
-      const stagiaireName = conv.stagiaire?.name?.toLowerCase() || ''
+      const stagiaire = conv.stagiaire
+      const stagiaireName = stagiaire ?
+        (`${stagiaire.prenom || ''} ${stagiaire.nom || ''} ${stagiaire.name || ''}`).toLowerCase() :
+        ''
       return (
         stagiaireName.includes(searchLower) ||
-        conv.departement.toLowerCase().includes(searchLower)
+        conv.departement.toLowerCase().includes(searchLower) ||
+        conv.tuteurNom.toLowerCase().includes(searchLower)
       )
     }
     return true
@@ -235,7 +240,10 @@ export default function ConventionsPage() {
               </TableHeader>
               <TableBody>
                 {filteredConventions.map((convention) => {
-                  const stagiaireName = convention.stagiaire?.name || 'Inconnu'
+                  const stagiaire = convention.stagiaire
+                  const stagiaireName = stagiaire ?
+                    (stagiaire.prenom && stagiaire.nom ? `${stagiaire.prenom} ${stagiaire.nom}` : stagiaire.name || stagiaire.email) :
+                    'Inconnu'
                   const statusLabel = statusConfig[convention.status as ConventionStatus]?.label || convention.status
                   const statusColor = statusConfig[convention.status as ConventionStatus]?.color || 'bg-gray-100'
 
@@ -316,7 +324,7 @@ export default function ConventionsPage() {
                   {stagiaires.length > 0 ? (
                     stagiaires.map((stagiaire) => (
                       <SelectItem key={stagiaire.id} value={stagiaire.id}>
-                        {stagiaire.name} ({stagiaire.email})
+                        {stagiaire.prenom && stagiaire.nom ? `${stagiaire.prenom} ${stagiaire.nom}` : stagiaire.name} ({stagiaire.email})
                       </SelectItem>
                     ))
                   ) : (
@@ -350,11 +358,14 @@ export default function ConventionsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {tuteurs.length > 0 ? (
-                    tuteurs.map((tuteur) => (
-                      <SelectItem key={tuteur.id} value={tuteur.name}>
-                        {tuteur.name} ({tuteur.email})
-                      </SelectItem>
-                    ))
+                    tuteurs.map((tuteur) => {
+                      const tName = tuteur.prenom && tuteur.nom ? `${tuteur.prenom} ${tuteur.nom}` : tuteur.name
+                      return (
+                        <SelectItem key={tuteur.id} value={tName}>
+                          {tName} ({tuteur.email})
+                        </SelectItem>
+                      )
+                    })
                   ) : (
                     <SelectItem value="none" disabled>
                       Aucun tuteur disponible
@@ -414,7 +425,11 @@ export default function ConventionsPage() {
                 <div className="space-y-4">
                   <div>
                     <Label className="text-muted-foreground">Stagiaire</Label>
-                    <p className="text-lg font-semibold">{currentConvention.stagiaire?.name || 'Inconnu'}</p>
+                    <p className="text-lg font-semibold">
+                      {currentConvention.stagiaire?.prenom && currentConvention.stagiaire?.nom
+                        ? `${currentConvention.stagiaire.prenom} ${currentConvention.stagiaire.nom}`
+                        : currentConvention.stagiaire?.name || 'Inconnu'}
+                    </p>
                     <p className="text-sm">{currentConvention.stagiaire?.email}</p>
                   </div>
                   <div>

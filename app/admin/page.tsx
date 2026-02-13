@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { useToast } from '@/hooks/use-toast'
 import {
   Users,
   Shield,
@@ -19,12 +20,15 @@ import {
   AlertTriangle,
   Check,
   X,
-  Mail
+  Mail,
+  Loader2
 } from 'lucide-react'
 
 export default function AdminDashboardPage() {
+  const { toast } = useToast()
   const [pendingUsers, setPendingUsers] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [emailSendingId, setEmailSendingId] = useState<string | null>(null)
   const [dashboardData, setDashboardData] = useState<any>({
     stats: {
       totalUsers: 0,
@@ -74,17 +78,33 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({ userId, action })
       })
       if (res.ok) {
+        toast({
+          title: "Action effectuée",
+          description: action === 'approve' ? "L'utilisateur a été validé." : "L'utilisateur a été refusé.",
+        })
         // Refresh both
         fetchPendingUsers()
         fetchDashboardStats()
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "La validation a échoué.",
+        })
       }
     } catch (error) {
       console.error("Validation failed", error)
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la validation.",
+      })
     }
   }
 
-  const handleSendEmail = async (email: string) => {
+  const handleSendEmail = async (userId: string, email: string) => {
     try {
+      setEmailSendingId(userId)
       const res = await fetch('/api/admin/users/email-validation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -95,13 +115,26 @@ export default function AdminDashboardPage() {
         })
       })
       if (res.ok) {
-        alert('Email envoyé avec succès')
+        toast({
+          title: "Email envoyé",
+          description: `L'email de bienvenue a été envoyé à ${email}.`,
+        })
       } else {
-        alert('Erreur lors de l\'envoi de l\'email')
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Impossible d'envoyer l'email.",
+        })
       }
     } catch (error) {
       console.error("Failed to send email", error)
-      alert('Erreur lors de l\'envoi de l\'email')
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'envoi de l'email.",
+      })
+    } finally {
+      setEmailSendingId(null)
     }
   }
 
@@ -227,8 +260,18 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleSendEmail(user.email)}>
-                      <Mail className="h-4 w-4 mr-1" /> Mail
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSendEmail(user.id, user.email)}
+                      disabled={emailSendingId === user.id}
+                    >
+                      {emailSendingId === user.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Mail className="h-4 w-4 mr-1" />
+                      )}
+                      {emailSendingId === user.id ? ' Envoi...' : ' Mail'}
                     </Button>
                     <Button size="sm" variant="destructive" onClick={() => handleValidate(user.id, 'reject')}>
                       <X className="h-4 w-4 mr-1" /> Refuser

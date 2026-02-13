@@ -18,7 +18,8 @@ import {
   XCircle,
   TrendingUp,
   Calendar,
-  Loader2
+  Loader2,
+  GraduationCap
 } from 'lucide-react'
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -35,6 +36,7 @@ export default function RHDashboard() {
   const [stagiaires, setStagiaires] = useState<any[]>([])
   const [conventions, setConventions] = useState<any[]>([])
   const [tuteurs, setTuteurs] = useState<any[]>([])
+  const [universities, setUniversities] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -45,24 +47,25 @@ export default function RHDashboard() {
     try {
       setIsLoading(true)
 
-      // Fetch data in parallel
-      const [candRes, usersRes, convRes] = await Promise.all([
+      const [candRes, usersRes, convRes, univRes] = await Promise.all([
         fetch('/api/candidatures'),
         fetch('/api/users?validated=true'),
-        fetch('/api/conventions')
+        fetch('/api/conventions'),
+        fetch('/api/rh/universites')
       ])
 
-      if (candRes.ok) setCandidatures(await candRes.json())
+      if (candRes.ok) setCandidatures(await candRes.ok ? await candRes.json() : [])
 
       if (usersRes.ok) {
         const users = await usersRes.json()
         if (Array.isArray(users)) {
-          setStagiaires(users.filter((u: any) => u.role?.name === 'stagiaire'))
-          setTuteurs(users.filter((u: any) => u.role?.name === 'tuteur'))
+          setStagiaires(users.filter((u: any) => u.role?.name?.toLowerCase() === 'stagiaire'))
+          setTuteurs(users.filter((u: any) => u.role?.name?.toLowerCase() === 'tuteur'))
         }
       }
 
       if (convRes.ok) setConventions(await convRes.json())
+      if (univRes.ok) setUniversities(await univRes.json())
 
     } catch (error) {
       console.error('Erreur chargement données dashboard:', error)
@@ -85,19 +88,22 @@ export default function RHDashboard() {
   const totalCandidatures = candidatures.length
   const candidaturesEnAttente = candidatures.filter(c => c.status === 'nouvelle').length
   const candidaturesAcceptees = candidatures.filter(c => ['acceptee', 'compte_cree'].includes(c.status)).length
-  const candidaturesRefusees = candidatures.filter(c => c.status === 'refusee').length
   const tauxAcceptation = totalCandidatures > 0
     ? Math.round((candidaturesAcceptees / totalCandidatures) * 100)
     : 0
 
   // Recent candidatures
-  const recentCandidatures = candidatures
+  const recentCandidatures = [...candidatures]
     .sort((a, b) => new Date(b.dateSoumission || '').getTime() - new Date(a.dateSoumission || '').getTime())
     .slice(0, 5)
 
+  const formatName = (p: any) => {
+    if (p.prenom && p.nom) return `${p.prenom} ${p.nom}`
+    return p.name || p.email
+  }
+
   return (
     <div className="space-y-8">
-      {/* Welcome header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
           Tableau de bord RH
@@ -107,7 +113,6 @@ export default function RHDashboard() {
         </p>
       </div>
 
-      {/* Stats cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -157,21 +162,20 @@ export default function RHDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Taux d'acceptation
+              Universités
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <GraduationCap className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{tauxAcceptation}%</div>
+            <div className="text-2xl font-bold text-blue-600">{universities.length}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {candidaturesAcceptees} acceptées / {totalCandidatures}
+              Partenaires identifiés
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick actions */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-start gap-4 space-y-0">
             <div className="p-2 rounded-lg bg-primary/10">
@@ -180,14 +184,14 @@ export default function RHDashboard() {
             <div className="flex-1">
               <CardTitle className="text-base">Candidatures</CardTitle>
               <CardDescription>
-                {candidaturesEnAttente} en attente de traitement
+                {candidaturesEnAttente} en attente
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent>
             <Link href="/rh/candidatures">
               <Button variant="outline" className="w-full bg-transparent">
-                Gérer les candidatures
+                Traiter
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -196,20 +200,42 @@ export default function RHDashboard() {
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-start gap-4 space-y-0">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <FileCheck className="h-5 w-5 text-primary" />
+            <div className="p-2 rounded-lg bg-blue-500/10">
+              <GraduationCap className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-base">Universités</CardTitle>
+              <CardDescription>
+                Gestion des partenaires
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Link href="/rh/universites">
+              <Button variant="outline" className="w-full bg-transparent">
+                Voir
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-start gap-4 space-y-0">
+            <div className="p-2 rounded-lg bg-green-500/10">
+              <FileCheck className="h-5 w-5 text-green-600" />
             </div>
             <div className="flex-1">
               <CardTitle className="text-base">Conventions</CardTitle>
               <CardDescription>
-                {conventions.length} conventions générées
+                {conventions.length} générées
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent>
             <Link href="/rh/conventions">
               <Button variant="outline" className="w-full bg-transparent">
-                Voir les conventions
+                Liste
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -218,20 +244,20 @@ export default function RHDashboard() {
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-start gap-4 space-y-0">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Users className="h-5 w-5 text-primary" />
+            <div className="p-2 rounded-lg bg-accent/10">
+              <Users className="h-5 w-5 text-accent-foreground" />
             </div>
             <div className="flex-1">
               <CardTitle className="text-base">Utilisateurs</CardTitle>
               <CardDescription>
-                {tuteurs.length} tuteurs, {stagiaires.length} stagiaires
+                Tuteurs et stagiaires
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent>
             <Link href="/rh/utilisateurs">
               <Button variant="outline" className="w-full bg-transparent">
-                Gérer les utilisateurs
+                Gérer
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -239,12 +265,11 @@ export default function RHDashboard() {
         </Card>
       </div>
 
-      {/* Recent candidatures */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Candidatures récentes</CardTitle>
-            <CardDescription>Les dernières candidatures soumises</CardDescription>
+            <CardDescription>Dernières soumissions sur la plateforme</CardDescription>
           </div>
           <Link href="/rh/candidatures">
             <Button variant="ghost" size="sm">
@@ -255,21 +280,21 @@ export default function RHDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {recentCandidatures.map((candidature) => (
+            {recentCandidatures.map((c) => (
               <div
-                key={candidature.id}
+                key={c.id}
                 className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-semibold text-primary">
-                      {candidature.prenom.charAt(0)}{candidature.nom.charAt(0)}
+                    <span className="text-sm font-semibold text-primary uppercase">
+                      {c.prenom.charAt(0)}{c.nom.charAt(0)}
                     </span>
                   </div>
                   <div>
-                    <p className="font-medium">{candidature.prenom} {candidature.nom}</p>
+                    <p className="font-medium">{c.prenom} {c.nom}</p>
                     <p className="text-sm text-muted-foreground">
-                      {candidature.formation}
+                      {c.formation}
                     </p>
                   </div>
                 </div>
@@ -277,17 +302,17 @@ export default function RHDashboard() {
                   <div className="text-right hidden sm:block">
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {new Date(candidature.dateSoumission).toLocaleDateString()}
+                      {new Date(c.dateSoumission).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
-                  <Badge variant={statusLabels[candidature.status]?.variant || 'outline'}>
-                    {statusLabels[candidature.status]?.label || candidature.status}
+                  <Badge variant={statusLabels[c.status]?.variant || 'outline'}>
+                    {statusLabels[c.status]?.label || c.status}
                   </Badge>
                 </div>
               </div>
             ))}
             {recentCandidatures.length === 0 && (
-              <p className="text-center text-muted-foreground py-4">Aucune candidature récente</p>
+              <p className="text-center text-muted-foreground py-4">Aucune candidature recente</p>
             )}
           </div>
         </CardContent>

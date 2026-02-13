@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -22,41 +23,71 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  Loader2,
 } from 'lucide-react'
 
 export default function TuteurDashboardPage() {
   const { user } = useAuth()
-  const tuteur = user as Tuteur
+  const [mesStagiaires, setMesStagiaires] = useState<any[]>([])
+  const [mesCandidaturs, setMesCandidaturs] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Get stagiaires assigned to this tutor
-  const mesStagiaires = mockStagiaires.filter(s => s.tuteurId === tuteur?.id)
-  
-  // Get onboarding tasks
-  const mesTaches = mockTachesOnboarding.filter(t => t.tuteurId === tuteur?.id)
+  useEffect(() => {
+    if (user?.id) {
+      fetchData()
+    }
+  }, [user])
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true)
+      const res = await fetch(`/api/tuteur/stagiaires?tuteurId=${user?.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setMesStagiaires(data.stagiaires || [])
+        setMesCandidaturs(data.candidatures || [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch tutor data", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Get onboarding tasks (still using mock data as they are not in DB yet)
+  const mesTaches = mockTachesOnboarding.filter(t => t.tuteurId === user?.id)
   const tachesTerminees = mesTaches.filter(t => t.status === 'termine').length
   const tachesEnCours = mesTaches.filter(t => t.status === 'en_cours').length
   const tachesAFaire = mesTaches.filter(t => t.status === 'a_faire').length
   const progressOnboarding = mesTaches.length > 0 ? (tachesTerminees / mesTaches.length) * 100 : 0
 
-  // Get evaluations done by this tutor
-  const mesEvaluations = mockEvaluations.filter(e => e.tuteurId === tuteur?.id)
+  // Get evaluations done by this tutor (still using mock data)
+  const mesEvaluations = mockEvaluations.filter(e => e.tuteurId === user?.id)
   const stagiairesEvalues = mesEvaluations.map(e => e.stagiaireId)
   const stagiairesNonEvalues = mesStagiaires.filter(s => !stagiairesEvalues.includes(s.id))
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
   const stats = [
     {
-      label: 'Stagiaires encadrés',
+      label: 'Stagiaires actifs',
       value: mesStagiaires.length,
       icon: Users,
       color: 'text-primary',
       bgColor: 'bg-primary/10',
     },
     {
-      label: 'Tâches onboarding',
-      value: `${tachesTerminees}/${mesTaches.length}`,
-      icon: ClipboardList,
-      color: 'text-accent',
-      bgColor: 'bg-accent/10',
+      label: 'Candidats assignés',
+      value: mesCandidaturs.length,
+      icon: Users,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-100',
     },
     {
       label: 'Évaluations faites',
@@ -79,7 +110,7 @@ export default function TuteurDashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">
-          Bonjour, {tuteur?.prenom}
+          Bonjour, {user?.prenom} {user?.nom}
         </h1>
         <p className="text-muted-foreground mt-1">
           Gérez vos stagiaires et suivez leur progression
@@ -111,7 +142,7 @@ export default function TuteurDashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
               <CardTitle className="text-lg">Mes stagiaires</CardTitle>
-              <CardDescription>Stagiaires que vous encadrez</CardDescription>
+              <CardDescription>Stagiaires avec un compte actif</CardDescription>
             </div>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/tuteur/stagiaires">
@@ -124,16 +155,17 @@ export default function TuteurDashboardPage() {
             {mesStagiaires.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p>Aucun stagiaire assigné</p>
+                <p>Aucun stagiaire actif</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {mesStagiaires.map((stagiaire) => {
+                  const initiales = stagiaire.name?.split(' ').map((n: string) => n[0]).join('') || stagiaire.email.charAt(0)
                   const convention = mockConventions.find(c => c.stagiaireId === stagiaire.id)
                   const tachesStagiaire = mesTaches.filter(t => t.stagiaireId === stagiaire.id)
                   const tachesTermineesStagiaire = tachesStagiaire.filter(t => t.status === 'termine').length
-                  const progress = tachesStagiaire.length > 0 
-                    ? (tachesTermineesStagiaire / tachesStagiaire.length) * 100 
+                  const progress = tachesStagiaire.length > 0
+                    ? (tachesTermineesStagiaire / tachesStagiaire.length) * 100
                     : 0
 
                   return (
@@ -144,12 +176,12 @@ export default function TuteurDashboardPage() {
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-sm font-medium text-primary">
-                            {stagiaire.prenom.charAt(0)}{stagiaire.nom.charAt(0)}
+                            {initiales}
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium">{stagiaire.prenom} {stagiaire.nom}</p>
-                          <p className="text-sm text-muted-foreground">{stagiaire.specialite}</p>
+                          <p className="font-medium">{stagiaire.name || stagiaire.email}</p>
+                          <p className="text-sm text-muted-foreground">{stagiaire.email}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -157,9 +189,13 @@ export default function TuteurDashboardPage() {
                           <p className="text-sm font-medium">{Math.round(progress)}%</p>
                           <p className="text-xs text-muted-foreground">Onboarding</p>
                         </div>
-                        <Badge variant={convention ? 'default' : 'secondary'}>
-                          {convention ? 'Actif' : 'En attente'}
-                        </Badge>
+                        {stagiaire.conventions && stagiaire.conventions.length > 0 ? (
+                          <Badge variant={stagiaire.conventions[0].status === 'signee_complete' ? 'default' : 'secondary'}>
+                            {stagiaire.conventions[0].status === 'signee_complete' ? 'Signée' : 'En cours'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">Pas de convention</Badge>
+                        )}
                       </div>
                     </div>
                   )
@@ -234,16 +270,16 @@ export default function TuteurDashboardPage() {
                           tache.status === 'termine'
                             ? 'default'
                             : tache.status === 'en_cours'
-                            ? 'secondary'
-                            : 'outline'
+                              ? 'secondary'
+                              : 'outline'
                         }
                         className="shrink-0"
                       >
                         {tache.status === 'termine'
                           ? 'Fait'
                           : tache.status === 'en_cours'
-                          ? 'En cours'
-                          : 'À faire'}
+                            ? 'En cours'
+                            : 'À faire'}
                       </Badge>
                     </div>
                   ))}
@@ -271,7 +307,7 @@ export default function TuteurDashboardPage() {
               {stagiairesNonEvalues.map((stagiaire) => (
                 <Button key={stagiaire.id} variant="outline" asChild>
                   <Link href={`/tuteur/evaluations?stagiaire=${stagiaire.id}`}>
-                    Évaluer {stagiaire.prenom} {stagiaire.nom}
+                    Évaluer {stagiaire.name || stagiaire.email}
                     <ChevronRight className="ml-1 h-4 w-4" />
                   </Link>
                 </Button>

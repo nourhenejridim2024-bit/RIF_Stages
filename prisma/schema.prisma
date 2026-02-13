@@ -14,18 +14,51 @@ model Role {
 }
 
 model User {
-  id           String               @id @default(uuid())
-  email        String               @unique
-  password     String
-  name         String?
-  roleId       String
-  isValidated  Boolean              @default(false)
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  candidatures CandidatureExterne[] @relation("CandidatureUniversite")
-  conventions  Convention[]
-  stagiaires   Stagiaire[]
-  role         Role                 @relation(fields: [roleId], references: [id])
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  password            String
+  name                String?
+  prenom              String?
+  nom                 String?
+  roleId              String
+  isValidated         Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  tuteurId            String?
+  candidaturesAssigne CandidatureExterne[] @relation("TuteurCandidature")
+  candidatures        CandidatureExterne[] @relation("CandidatureUniversite")
+  conventions         Convention[]
+  stagiaires          Stagiaire[]
+  role                Role                 @relation(fields: [roleId], references: [id])
+  tuteur              User?                @relation("TuteurRelation", fields: [tuteurId], references: [id])
+  stagiairesEncadres  User[]               @relation("TuteurRelation")
+  tachesOnboardingTuteur   OnboardingTask[] @relation("TuteurOnboarding")
+  tachesOnboardingStagiaire OnboardingTask[] @relation("StagiaireOnboarding")
+  evaluationsTuteur            Evaluation[]     @relation("TuteurEvaluation")
+  evaluationsStagiaire         Evaluation[]     @relation("StagiaireEvaluation")
+}
+
+model OnboardingTask {
+  id            String   @id @default(uuid())
+  tuteurId      String
+  stagiaireId   String?
+  candidatureId String?
+  description   String
+  status        String   @default("a_faire") // "a_faire", "en_cours", "termine"
+  dateDebut     DateTime?
+  dateFin       DateTime?
+  notes         String?
+  ordre         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tuteur      User                @relation("TuteurOnboarding", fields: [tuteurId], references: [id])
+  stagiaire   User?               @relation("StagiaireOnboarding", fields: [stagiaireId], references: [id])
+  candidature CandidatureExterne? @relation("CandidatureOnboarding", fields: [candidatureId], references: [id])
+
+  @@index([tuteurId])
+  @@index([stagiaireId])
+  @@index([candidatureId])
 }
 
 model Convention {
@@ -85,8 +118,43 @@ model CandidatureExterne {
   updatedAt           DateTime  @updatedAt
   universiteId        String?
   autreUniversite     String?
-  universite          User?     @relation("CandidatureUniversite", fields: [universiteId], references: [id])
+  tuteurId            String?
+  tuteur              User?     @relation("TuteurCandidature", fields: [tuteurId], references: [id])
+  universite          User?                @relation("CandidatureUniversite", fields: [universiteId], references: [id])
+  onboardingTasks     OnboardingTask[]     @relation("CandidatureOnboarding")
+  evaluations         Evaluation[]         @relation("CandidatureEvaluation")
 
   @@index([status])
   @@index([email])
+}
+
+model Evaluation {
+  id          String   @id @default(uuid())
+  tuteurId    String
+  stagiaireId String?
+  candidatureId String?
+  
+  // Scores (1 to 5)
+  assiduite         Int      @default(0)
+  qualiteTravail    Int      @default(0)
+  autonomie         Int      @default(0)
+  relationnel       Int      @default(0)
+  competencesTech   Int      @default(0)
+  apprentissage     Int      @default(0)
+  discipline        Int      @default(0)
+  
+  globalScore       Float    @default(0)
+  commentaires      String?  @db.Text
+  status            String   @default("brouillon") // "brouillon", "envoye"
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tuteur      User     @relation("TuteurEvaluation", fields: [tuteurId], references: [id])
+  stagiaire   User?    @relation("StagiaireEvaluation", fields: [stagiaireId], references: [id])
+  candidature CandidatureExterne? @relation("CandidatureEvaluation", fields: [candidatureId], references: [id])
+
+  @@index([tuteurId])
+  @@index([stagiaireId])
+  @@index([candidatureId])
 }

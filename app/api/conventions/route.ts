@@ -46,7 +46,24 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
+        const tuteurId = searchParams.get('tuteurId');
+        const stagiaireId = searchParams.get('stagiaireId');
+
+        const whereClause: any = {};
+
+        if (stagiaireId) {
+            whereClause.stagiaireId = stagiaireId;
+        }
+
+        if (tuteurId) {
+            whereClause.stagiaire = {
+                tuteurId: tuteurId
+            };
+        }
+
         const conventions = await prisma.convention.findMany({
+            where: whereClause,
             include: {
                 stagiaire: true // Include User details
             },

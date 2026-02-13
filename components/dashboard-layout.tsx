@@ -54,6 +54,7 @@ const navItemsByRole: Record<UserRole, NavItem[]> = {
   tuteur: [
     { label: 'Tableau de bord', href: '/tuteur', icon: LayoutDashboard },
     { label: 'Mes stagiaires', href: '/tuteur/stagiaires', icon: Users },
+    { label: 'Conventions', href: '/tuteur/conventions', icon: FileCheck },
     { label: 'Onboarding', href: '/tuteur/onboarding', icon: ClipboardList },
     { label: 'Évaluations', href: '/tuteur/evaluations', icon: Award },
   ],

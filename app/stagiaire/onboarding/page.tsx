@@ -1,7 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
-import { mockTachesOnboarding, mockTuteurs, mockConventions } from '@/lib/mock-data'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -14,9 +14,10 @@ import {
   AlertCircle,
   User,
   Calendar,
+  Loader2,
 } from 'lucide-react'
 
-const statusConfig = {
+const statusConfig: any = {
   a_faire: { label: 'À faire', icon: Circle, color: 'text-muted-foreground' },
   en_cours: { label: 'En cours', icon: Clock, color: 'text-orange-500' },
   termine: { label: 'Terminé', icon: CheckCircle2, color: 'text-green-600' },
@@ -24,15 +25,47 @@ const statusConfig = {
 
 export default function OnboardingPage() {
   const { user } = useAuth()
+  const [taches, setTaches] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [tuteur, setTuteur] = useState<any>(null)
 
-  if (!user) return null
+  useEffect(() => {
+    if (user?.id) {
+      fetchData()
+    }
+  }, [user])
 
-  const taches = mockTachesOnboarding.filter(t => t.stagiaireId === user.id)
-  const convention = mockConventions.find(c => c.stagiaireId === user.id)
-  const tuteur = convention 
-    ? mockTuteurs.find(t => t.nom + ' ' + t.prenom === convention.contenu.tuteurNom || 
-        t.prenom + ' ' + t.nom === convention.contenu.tuteurNom)
-    : null
+  const fetchData = async () => {
+    try {
+      setIsLoading(true)
+
+      // Fetch tasks
+      const resTasks = await fetch(`/api/onboarding?stagiaireId=${user?.id}`)
+      if (resTasks.ok) {
+        const data = await resTasks.json()
+        setTaches(data || [])
+      }
+
+      // Try to find the tutor if tasks exist
+      const resTuteur = await fetch(`/api/tuteur/info?stagiaireId=${user?.id}`)
+      if (resTuteur.ok) {
+        const data = await resTuteur.json()
+        setTuteur(data.tuteur)
+      }
+    } catch (error) {
+      console.error("Failed to fetch onboarding data", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (!user || isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   if (taches.length === 0) {
     return (
@@ -47,7 +80,7 @@ export default function OnboardingPage() {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Votre checklist d'onboarding n'est pas encore disponible. Elle sera créée par votre 
+            Votre checklist d'onboarding n'est pas encore disponible. Elle sera créée par votre
             tuteur une fois votre convention signée et votre stage commencé.
           </AlertDescription>
         </Alert>
@@ -57,15 +90,28 @@ export default function OnboardingPage() {
 
   const tachesTerminees = taches.filter(t => t.status === 'termine').length
   const tachesEnCours = taches.filter(t => t.status === 'en_cours').length
-  const progress = (tachesTerminees / taches.length) * 100
+  const progress = taches.length > 0 ? (tachesTerminees / taches.length) * 100 : 0
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Mon onboarding</h1>
-        <p className="mt-1 text-muted-foreground">
-          Suivez votre progression d'intégration
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Mon onboarding</h1>
+          <p className="mt-1 text-muted-foreground">
+            Suivez votre progression d'intégration
+          </p>
+        </div>
+        {tuteur && (
+          <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Tuteur assigné</p>
+              <p className="text-sm font-semibold">{tuteur.prenom} {tuteur.nom}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Progress overview */}
@@ -100,32 +146,6 @@ export default function OnboardingPage() {
         </CardContent>
       </Card>
 
-      {/* Tutor info */}
-      {tuteur && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Votre tuteur
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-lg font-semibold text-primary">
-                  {tuteur.prenom.charAt(0)}{tuteur.nom.charAt(0)}
-                </span>
-              </div>
-              <div>
-                <p className="font-medium">{tuteur.prenom} {tuteur.nom}</p>
-                <p className="text-sm text-muted-foreground">{tuteur.poste}</p>
-                <p className="text-sm text-muted-foreground">{tuteur.email}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Tasks list */}
       <Card>
         <CardHeader>
@@ -134,47 +154,45 @@ export default function OnboardingPage() {
             Checklist d'intégration
           </CardTitle>
           <CardDescription>
-            Tâches à réaliser durant votre première semaine
+            Tâches à réaliser durant votre stage
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {taches.sort((a, b) => a.ordre - b.ordre).map((tache) => {
-              const status = statusConfig[tache.status]
+            {taches.sort((a, b) => (a.ordre || 0) - (b.ordre || 0)).map((tache) => {
+              const status = statusConfig[tache.status] || statusConfig.a_faire
               const StatusIcon = status.icon
 
               return (
                 <div
                   key={tache.id}
-                  className={`flex items-start gap-4 p-4 rounded-lg border ${
-                    tache.status === 'termine' 
-                      ? 'bg-green-50/50 border-green-200' 
-                      : tache.status === 'en_cours'
+                  className={`flex items-start gap-4 p-4 rounded-lg border ${tache.status === 'termine'
+                    ? 'bg-green-50/50 border-green-200'
+                    : tache.status === 'en_cours'
                       ? 'bg-orange-50/50 border-orange-200'
                       : 'bg-card border-border'
-                  }`}
+                    }`}
                 >
                   <div className="mt-0.5">
                     <StatusIcon className={`h-5 w-5 ${status.color}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className={`font-medium ${
-                        tache.status === 'termine' ? 'text-green-800' : 'text-foreground'
-                      }`}>
+                      <p className={`font-medium ${tache.status === 'termine' ? 'text-green-800' : 'text-foreground'
+                        }`}>
                         {tache.description}
                       </p>
-                      <Badge 
+                      <Badge
                         variant={tache.status === 'termine' ? 'default' : 'secondary'}
                         className="shrink-0"
                       >
                         {status.label}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                    <div className="flex flex-col gap-1 mt-1 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        Échéance: {new Date(tache.echeance).toLocaleDateString('fr-FR')}
+                        Période: {tache.dateDebut ? new Date(tache.dateDebut).toLocaleDateString('fr-FR') : '...'} au {tache.dateFin ? new Date(tache.dateFin).toLocaleDateString('fr-FR') : '...'}
                       </span>
                     </div>
                     {tache.notes && (

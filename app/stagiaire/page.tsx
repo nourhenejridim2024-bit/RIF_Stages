@@ -1,7 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
-import { mockCandidatures, mockConventions, mockTachesOnboarding } from '@/lib/mock-data'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,66 +16,74 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  Award,
+  Loader2,
 } from 'lucide-react'
-
-const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  brouillon: { label: 'Brouillon', variant: 'secondary' },
-  soumise: { label: 'Soumise', variant: 'default' },
-  en_revision: { label: 'En révision', variant: 'outline' },
-  acceptee: { label: 'Acceptée', variant: 'default' },
-  refusee: { label: 'Refusée', variant: 'destructive' },
-}
 
 export default function StagiaireDashboard() {
   const { user } = useAuth()
+  const [candidature, setCandidature] = useState<any>(null)
+  const [convention, setConvention] = useState<any>(null)
+  const [taches, setTaches] = useState<any[]>([])
+  const [evaluation, setEvaluation] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  if (!user) return null
+  useEffect(() => {
+    if (user?.id) {
+      fetchDashboardData()
+    }
+  }, [user])
 
-  // Get stagiaire's data
-  const candidature = mockCandidatures.find(c => c.stagiaireId === user.id)
-  const convention = mockConventions.find(c => c.stagiaireId === user.id)
-  const taches = mockTachesOnboarding.filter(t => t.stagiaireId === user.id)
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true)
+      const [resCand, resConv, resTaches, resEval] = await Promise.all([
+        fetch(`/api/stagiaire/candidature?stagiaireId=${user?.id}`),
+        fetch(`/api/stagiaire/convention?stagiaireId=${user?.id}`),
+        fetch(`/api/onboarding?stagiaireId=${user?.id}`),
+        fetch(`/api/evaluation?stagiaireId=${user?.id}`)
+      ])
+
+      if (resCand.ok) setCandidature(await resCand.json())
+      if (resConv.ok) setConvention(await resConv.json())
+      if (resTaches.ok) setTaches(await resTaches.json())
+      if (resEval.ok) {
+        const data = await resEval.json()
+        if (data && data.status === 'envoye') {
+          setEvaluation(data)
+        } else {
+          setEvaluation(null)
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data", error)
+    } finally {
+      setIsLoading(true) // Should be false, let's wait for actual data to decide
+      setIsLoading(false)
+    }
+  }
+
+  if (!user || isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   const tachesTerminees = taches.filter(t => t.status === 'termine').length
   const onboardingProgress = taches.length > 0 ? (tachesTerminees / taches.length) * 100 : 0
 
-  // Determine stage status
   const getStageStatus = () => {
-    if (!candidature) return { step: 1, label: 'Pas de candidature' }
-    if (candidature.status === 'brouillon') return { step: 1, label: 'Candidature en cours' }
-    if (candidature.status === 'soumise') return { step: 2, label: 'Candidature en attente' }
+    if (!candidature) return { step: 1, label: 'Candidature à soumettre' }
+    if (candidature.status === 'soumise') return { step: 2, label: 'Candidature en cours de revue' }
     if (candidature.status === 'refusee') return { step: 2, label: 'Candidature refusée' }
-    if (!convention || convention.status !== 'signee_complete') return { step: 3, label: 'Convention à signer' }
-    if (onboardingProgress < 100) return { step: 4, label: 'Onboarding en cours' }
-    return { step: 5, label: 'Stage en cours' }
+    if (!convention || convention.status !== 'signee_complete') return { step: 3, label: 'Convention à finaliser' }
+    if (evaluation) return { step: 5, label: 'Stage terminé - Évaluation disponible' }
+    return { step: 4, label: 'Stage et Onboarding en cours' }
   }
 
   const stageStatus = getStageStatus()
-
-  const quickActions = [
-    {
-      title: 'Ma candidature',
-      description: candidature ? 'Voir le statut de ma candidature' : 'Déposer ma candidature',
-      href: '/stagiaire/candidature',
-      icon: FileText,
-      status: candidature ? statusLabels[candidature.status] : null,
-    },
-    {
-      title: 'Convention',
-      description: convention ? 'Consulter ma convention' : 'Non disponible',
-      href: '/stagiaire/convention',
-      icon: FileCheck,
-      disabled: !convention,
-    },
-    {
-      title: 'Onboarding',
-      description: taches.length > 0 ? `${tachesTerminees}/${taches.length} tâches complétées` : 'Non disponible',
-      href: '/stagiaire/onboarding',
-      icon: ClipboardList,
-      disabled: taches.length === 0,
-      progress: onboardingProgress,
-    },
-  ]
 
   return (
     <div className="space-y-8">
@@ -89,7 +97,80 @@ export default function StagiaireDashboard() {
         </p>
       </div>
 
-      {/* Status overview */}
+      {/* Main Stats/Alerts */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="bg-gradient-to-br from-primary/5 to-transparent">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              Onboarding
+            </CardTitle>
+            <CardDescription>Progression de votre intégration</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">{Math.round(onboardingProgress)}% complété</span>
+              <span className="text-xs text-muted-foreground">{tachesTerminees}/{taches.length} tâches</span>
+            </div>
+            <Progress value={onboardingProgress} className="h-2 mb-4" />
+            <Link href="/stagiaire/onboarding">
+              <Button variant="outline" size="sm" className="w-full">
+                Voir ma checklist
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {evaluation ? (
+          <Card className="border-chart-4 bg-chart-4/5">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2 text-chart-4">
+                <Award className="h-5 w-5" />
+                Évaluation disponible
+              </CardTitle>
+              <CardDescription>Votre bilan de fin de stage est prêt</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="h-12 w-12 rounded-full bg-chart-4/20 flex items-center justify-center text-chart-4 font-bold text-xl">
+                  {evaluation.globalScore}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Note globale sur 5</p>
+                  <p className="text-xs text-muted-foreground">Évalué par {evaluation.tuteur?.prenom || 'votre tuteur'}</p>
+                </div>
+              </div>
+              <Link href="/stagiaire/evaluation">
+                <Button className="w-full bg-chart-4 hover:bg-chart-4/90">
+                  Consulter mon évaluation
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Award className="h-5 w-5 text-muted-foreground" />
+                Évaluation de fin de stage
+              </CardTitle>
+              <CardDescription>Bilan de compétences</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col h-full justify-between pb-6">
+              <p className="text-sm text-muted-foreground mb-4">
+                Votre évaluation sera disponible une fois votre stage terminé et validé par votre tuteur.
+              </p>
+              <Button variant="outline" size="sm" disabled className="w-full">
+                À venir
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Pathway Overview */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Statut de votre parcours</CardTitle>
@@ -100,13 +181,12 @@ export default function StagiaireDashboard() {
             {[1, 2, 3, 4, 5].map((step) => (
               <div key={step} className="flex-1 flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    step < stageStatus.step
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step < stageStatus.step
                       ? 'bg-primary text-primary-foreground'
                       : step === stageStatus.step
-                      ? 'bg-primary/20 text-primary border-2 border-primary'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
+                        ? 'bg-primary/20 text-primary border-2 border-primary'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
                 >
                   {step < stageStatus.step ? (
                     <CheckCircle2 className="h-5 w-5" />
@@ -116,171 +196,42 @@ export default function StagiaireDashboard() {
                 </div>
                 {step < 5 && (
                   <div
-                    className={`flex-1 h-1 mx-2 rounded ${
-                      step < stageStatus.step ? 'bg-primary' : 'bg-muted'
-                    }`}
+                    className={`flex-1 h-1 mx-2 rounded ${step < stageStatus.step ? 'bg-primary' : 'bg-muted'
+                      }`}
                   />
                 )}
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-5 text-xs text-muted-foreground">
-            <span>Candidature</span>
-            <span>Validation</span>
-            <span>Convention</span>
-            <span>Onboarding</span>
-            <span>Stage</span>
+          <div className="grid grid-cols-5 text-[10px] sm:text-xs text-muted-foreground">
+            <span className="text-center">Candidature</span>
+            <span className="text-center">Validation</span>
+            <span className="text-center">Convention</span>
+            <span className="text-center">Onboarding</span>
+            <span className="text-center">Évaluation</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Quick actions */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {quickActions.map((action) => (
-          <Card 
-            key={action.title} 
-            className={action.disabled ? 'opacity-60' : 'hover:shadow-md transition-shadow'}
-          >
-            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <action.icon className="h-5 w-5 text-primary" />
+      {/* Quick shortcuts */}
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+        {[
+          { label: 'Ma candidature', icon: FileText, href: '/stagiaire/candidature' },
+          { label: 'Ma convention', icon: FileCheck, href: '/stagiaire/convention' },
+          { label: 'Mon Onboarding', icon: ClipboardList, href: '/stagiaire/onboarding' },
+          { label: 'Mon Évaluation', icon: Award, href: '/stagiaire/evaluation' },
+        ].map((item) => (
+          <Link key={item.label} href={item.href}>
+            <Card className="hover:border-primary transition-colors cursor-pointer group">
+              <CardContent className="p-4 flex flex-col items-center justify-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/5 group-hover:bg-primary/10 transition-colors">
+                  <item.icon className="h-6 w-6 text-primary" />
                 </div>
-                <div>
-                  <CardTitle className="text-base font-semibold">{action.title}</CardTitle>
-                  <CardDescription className="text-sm mt-0.5">
-                    {action.description}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {action.status && (
-                <Badge variant={action.status.variant} className="mb-3">
-                  {action.status.label}
-                </Badge>
-              )}
-              {action.progress !== undefined && (
-                <div className="mb-3">
-                  <Progress value={action.progress} className="h-2" />
-                </div>
-              )}
-              <Link href={action.href}>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full bg-transparent"
-                  disabled={action.disabled}
-                >
-                  Accéder
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+                <span className="text-sm font-medium text-center">{item.label}</span>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
-      </div>
-
-      {/* Upcoming tasks & info */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Next tasks */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              Prochaines étapes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {!candidature && (
-                <li className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-accent mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Déposer votre candidature</p>
-                    <p className="text-xs text-muted-foreground">
-                      Complétez le formulaire en 3 étapes
-                    </p>
-                  </div>
-                </li>
-              )}
-              {candidature?.status === 'acceptee' && convention?.status !== 'signee_complete' && (
-                <li className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-accent mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Signer votre convention</p>
-                    <p className="text-xs text-muted-foreground">
-                      Votre convention est prête à être signée
-                    </p>
-                  </div>
-                </li>
-              )}
-              {taches.filter(t => t.status === 'a_faire' || t.status === 'en_cours').slice(0, 3).map((tache) => (
-                <li key={tache.id} className="flex items-start gap-3">
-                  <ClipboardList className="h-5 w-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">{tache.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Échéance: {new Date(tache.echeance).toLocaleDateString('fr-FR')}
-                    </p>
-                  </div>
-                </li>
-              ))}
-              {!candidature && taches.length === 0 && (
-                <li className="text-sm text-muted-foreground">
-                  Aucune tâche en attente pour le moment
-                </li>
-              )}
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Important dates */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              Dates importantes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {convention && (
-                <>
-                  <li className="flex items-center justify-between">
-                    <span className="text-sm">Début du stage</span>
-                    <span className="text-sm font-medium">
-                      {new Date(convention.contenu.dateDebut).toLocaleDateString('fr-FR')}
-                    </span>
-                  </li>
-                  <li className="flex items-center justify-between">
-                    <span className="text-sm">Fin du stage</span>
-                    <span className="text-sm font-medium">
-                      {new Date(convention.contenu.dateFin).toLocaleDateString('fr-FR')}
-                    </span>
-                  </li>
-                  <li className="flex items-center justify-between">
-                    <span className="text-sm">Département</span>
-                    <span className="text-sm font-medium">
-                      {convention.contenu.departement}
-                    </span>
-                  </li>
-                  <li className="flex items-center justify-between">
-                    <span className="text-sm">Tuteur</span>
-                    <span className="text-sm font-medium">
-                      {convention.contenu.tuteurNom}
-                    </span>
-                  </li>
-                </>
-              )}
-              {!convention && (
-                <li className="text-sm text-muted-foreground">
-                  Les dates seront affichées une fois votre candidature acceptée
-                </li>
-              )}
-            </ul>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )
