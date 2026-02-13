@@ -1,33 +1,45 @@
 # 🎓 Rif-Stages-Plateforme
 
-## 📌 Présentation
-
-**Rif-Stages-Plateforme** est une application web moderne permettant la gestion digitale des stages académiques.  
-La plateforme facilite l’interaction entre **stagiaires**, **universités**, **entreprises**, et **administrateurs**.
-
-Elle permet de centraliser les candidatures, conventions, validations et suivis administratifs dans un seul système.
+Plateforme digitale de gestion des stages académiques.
 
 ---
 
-## 🧠 Objectifs du projet
+## 📌 Aperçu du projet
 
-Ce projet vise à :
+**Rif-Stages-Plateforme** est une application web développée avec **Next.js** et **Prisma** permettant la gestion complète du cycle de stage :
 
-✔ Simplifier la gestion des stages  
-✔ Réduire les procédures manuelles  
-✔ Offrir une expérience utilisateur claire et fluide  
-✔ Centraliser les documents et validations  
-✔ Améliorer la communication entre acteurs académiques
+✔ Gestion des utilisateurs  
+✔ Candidatures de stage  
+✔ Génération et suivi des conventions  
+✔ Validation des comptes  
+✔ Suivi académique  
+✔ Évaluations  
+
+La plateforme connecte les **stagiaires**, **universités**, **entreprises**, et **administrateurs** dans un environnement unique.
 
 ---
 
-## 🚀 Fonctionnalités principales
+## 🧠 Problématique adressée
+
+La gestion traditionnelle des stages implique souvent :
+
+❌ Documents papier  
+❌ Procédures longues  
+❌ Suivi difficile  
+❌ Manque de centralisation  
+
+Cette plateforme vise à **digitaliser**, **simplifier** et **sécuriser** ces processus.
+
+---
+
+## 👥 Acteurs du système
 
 ### 👨‍🎓 Stagiaire
-- Authentification / Connexion
+- Création de compte
+- Authentification
 - Soumission de candidature
-- Upload de CV et documents
-- Suivi de l’état des demandes
+- Upload de CV / documents
+- Suivi des demandes
 - Accès aux conventions
 - Onboarding
 - Évaluation
@@ -35,106 +47,251 @@ Ce projet vise à :
 ---
 
 ### 🏫 Université
-- Gestion des stagiaires
-- Consultation des conventions
-- Suivi des validations
-- Tableau de bord
+- Consultation des stagiaires
+- Gestion des conventions
+- Suivi des stages
+- Tableau de bord académique
 
 ---
 
 ### 🏢 Entreprise / RH
 - Consultation des candidatures
-- Gestion des stagiaires
-- Suivi des stages
+- Suivi des stagiaires
+- Gestion des stages
 
 ---
 
 ### 🛠 Administrateur
-- Gestion des utilisateurs
+- Gestion globale des utilisateurs
 - Validation des comptes
+- Gestion des rôles
 - Logs système
-- Gestion globale de la plateforme
+- Supervision de la plateforme
 
 ---
 
-## 🧩 Stack Technique
+## 🧩 Architecture Technique
 
-- **Frontend** : Next.js + React + TypeScript  
-- **Backend** : API Routes Next.js  
-- **ORM** : Prisma  
-- **Base de données** : PostgreSQL  
-- **UI** : Tailwind / composants modernes  
-- **Gestion d’état** : React Hooks  
-- **Versioning** : Git + GitHub
+La plateforme suit une architecture moderne **full-stack JavaScript / TypeScript** :
+
+```
+
+Client (Navigateur)
+↓
+Next.js (Frontend + API)
+↓
+Prisma ORM
+↓
+PostgreSQL Database
+
+````
+
+---
+
+## 🧱 Stack Technologique
+
+| Couche | Technologie |
+|--------|-------------|
+| Frontend | Next.js + React |
+| Langage | TypeScript |
+| Backend | Next.js API Routes |
+| ORM | Prisma |
+| Base de données | PostgreSQL |
+| UI | Tailwind CSS / composants |
+| Authentification | Sessions / JWT selon implémentation |
+| Versioning | Git + GitHub |
+
+---
+
+## 🔐 Sécurité & Bonnes pratiques
+
+La plateforme applique plusieurs principes :
+
+✔ Séparation des rôles utilisateur  
+✔ Validation côté serveur  
+✔ Protection des routes  
+✔ Gestion des sessions  
+✔ Requêtes sécurisées vers la base  
+
+⚠ Les variables sensibles sont stockées dans `.env`
 
 ---
 
 ## ⚙️ Prérequis
 
-Avant de lancer le projet, assurez-vous d’avoir :
+Avant installation :
 
-✔ Node.js installé  
-✔ npm installé  
-✔ PostgreSQL configuré  
-✔ Variables d’environnement définies
+✔ Node.js  
+✔ npm  
+✔ PostgreSQL  
+✔ Git  
+
+Vérifier :
+
+```bash
+node -v
+npm -v
+psql --version
+git --version
+````
 
 ---
 
-## ▶️ Installation du projet
+## ▶️ Installation
 
 ### 1️⃣ Cloner le dépôt
 
 ```bash
 git clone https://github.com/TON_USERNAME/Rif-Stages-Plateforme.git
 cd Rif-Stages-Plateforme
-2️⃣ Installer les dépendances
+```
+
+---
+
+### 2️⃣ Installer les dépendances
+
+```bash
 npm install
-3️⃣ Générer Prisma Client
-npx prisma generate
-4️⃣ Lancer le serveur de développement
-npm run dev
-Application accessible sur :
+```
 
-http://localhost:3000
-🗄 Configuration Base de Données
-Créer un fichier .env :
+---
 
+### 3️⃣ Configurer l’environnement
+
+Créer un fichier `.env` :
+
+```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/rif_stages"
-Puis exécuter :
+```
 
-npx prisma migrate dev
-🧪 Développement
-Commandes utiles :
+---
 
-npm run dev        # Mode développement
-npm run build      # Build production
-npm start          # Lancer en production
-npx prisma studio  # Interface base de données
-🔧 Problèmes fréquents & Solutions
-✔ Prisma non généré
+### 4️⃣ Générer Prisma Client
+
+```bash
 npx prisma generate
-✔ Conflit de dépendances
+```
+
+---
+
+### 5️⃣ Appliquer les migrations
+
+```bash
+npx prisma migrate dev
+```
+
+---
+
+### 6️⃣ Lancer le projet
+
+```bash
+npm run dev
+```
+
+Application disponible sur :
+
+```
+http://localhost:3000
+```
+
+---
+
+## 🗂 Structure Simplifiée du Projet
+
+```
+Rif-Stages-Plateforme/
+│
+├── app/                # Pages & routing Next.js
+├── components/         # Composants UI réutilisables
+├── lib/                # Services & logique métier
+├── prisma/             # Schéma & migrations DB
+├── public/             # Assets statiques
+├── styles/             # Styles globaux
+├── package.json        # Dépendances
+└── tsconfig.json       # Config TypeScript
+```
+
+---
+
+## 🧪 Commandes utiles
+
+| Action          | Commande              |
+| --------------- | --------------------- |
+| Dev mode        | `npm run dev`         |
+| Build           | `npm run build`       |
+| Start prod      | `npm start`           |
+| Prisma generate | `npx prisma generate` |
+| Prisma studio   | `npx prisma studio`   |
+
+---
+
+## 🔧 Résolution de problèmes fréquents
+
+### ✔ Prisma Client Error
+
+```bash
+npx prisma generate
+```
+
+---
+
+### ✔ Base de données non connectée
+
+Vérifier `.env` + PostgreSQL actif.
+
+---
+
+### ✔ Problèmes dépendances
+
+```bash
 npm audit fix
-✔ Next.js warning lockfiles
-Supprimer le lockfile inutile :
+```
 
-garder package-lock.json si npm
+---
 
-supprimer pnpm-lock.yaml si non utilisé
+### ✔ Warning lockfiles
 
-🔁 Workflow Git recommandé
-Mettre à jour le projet :
+Supprimer lockfiles inutiles :
 
+* garder `package-lock.json` (npm)
+* supprimer `pnpm-lock.yaml` si non utilisé
+
+---
+
+## 🔁 Workflow Git recommandé
+
+Toujours mettre à jour avant travail :
+
+```bash
 git fetch
 git pull
-Sauvegarder les modifications :
+```
 
+Sauvegarder correctement :
+
+```bash
 git add .
-git commit -m "Description des changements"
+git commit -m "Message clair"
 git push origin main
-🤝 Collaboration
-Pour récupérer les modifications d’un autre dépôt :
+```
 
-git remote add nom_remote URL_DU_DEPOT
-git fetch nom_remote
-git merge nom_remote/main
+---
+
+## 🤝 Collaboration en équipe
+
+Ajouter un dépôt distant :
+
+```bash
+git remote add nom URL
+git fetch nom
+git merge nom/main
+```
+
+Comparer les changements :
+
+```bash
+git diff main nom/main
+```
+
+---
+
