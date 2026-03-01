@@ -52,6 +52,7 @@ Cette plateforme vise à **digitaliser**, **simplifier** et **sécuriser** ces p
 - Gestion des conventions
 - Suivi des stages
 - Tableau de bord académique
+<img width="1876" height="901" alt="image" src="https://github.com/user-attachments/assets/339e9c7f-5ee4-4af6-a2f9-4834234a789a" />
 
 ---
 
