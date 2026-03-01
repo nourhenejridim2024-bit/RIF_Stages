@@ -35,6 +35,29 @@ Cette plateforme vise à **digitaliser**, **simplifier** et **sécuriser** ces p
 
 ## 👥 Acteurs du système
 
+### 🛠 Administrateur
+- Gestion globale des utilisateurs
+- Validation des comptes
+- Gestion des rôles
+- Logs système
+- Supervision de la plateforme
+Dashboard :
+<img width="1882" height="900" alt="image" src="https://github.com/user-attachments/assets/27a76aa3-59f8-4126-b787-5ca925bb47fc" />
+candidats acceptes :
+<img width="1861" height="897" alt="image" src="https://github.com/user-attachments/assets/561c6310-6ace-49cc-b98a-f79bfa304460" />
+universites :
+<img width="1865" height="902" alt="image" src="https://github.com/user-attachments/assets/01a85afc-91ae-4ede-b19b-d1794272b7db" />
+Utilisateurs :
+<img width="1872" height="905" alt="image" src="https://github.com/user-attachments/assets/c8862e4e-eb45-4b84-a0eb-3c7f7ba75804" />
+Rôles et Permissions :
+<img width="1867" height="906" alt="image" src="https://github.com/user-attachments/assets/04729e93-f7c5-4a19-a787-416683e8fe07" />
+Paramètres : 
+<img width="1871" height="902" alt="image" src="https://github.com/user-attachments/assets/38f06318-2aea-4993-9447-0b21d7975c78" />
+Logs système : 
+<img width="1861" height="901" alt="image" src="https://github.com/user-attachments/assets/22b945d0-0fa3-4dd2-9f0c-e962662dd83d" />
+
+
+---
 ### 👨‍🎓 Stagiaire
 - Création de compte
 - Authentification
@@ -69,15 +92,7 @@ convention :
 
 ---
 
-### 🛠 Administrateur
-- Gestion globale des utilisateurs
-- Validation des comptes
-- Gestion des rôles
-- Logs système
-- Supervision de la plateforme
-<img width="1882" height="900" alt="image" src="https://github.com/user-attachments/assets/27a76aa3-59f8-4126-b787-5ca925bb47fc" />
 
----
 
 ### 🛠 Tuteur
 - Gestion globale des stagiaires 
