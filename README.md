@@ -79,6 +79,15 @@ convention :
 
 ---
 
+### 🛠 Tuteur
+- Gestion globale des stagiaires 
+- Omboarding
+- Évaluation 
+
+<img width="1890" height="895" alt="image" src="https://github.com/user-attachments/assets/c68005b6-03dc-4d6c-b02d-5916d327e363" />
+
+---
+
 ## 🧩 Architecture Technique
 
 La plateforme suit une architecture moderne **full-stack JavaScript / TypeScript** :
