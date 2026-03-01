@@ -44,6 +44,7 @@ Cette plateforme vise à **digitaliser**, **simplifier** et **sécuriser** ces p
 - Accès aux conventions
 - Onboarding
 - Évaluation
+<img width="1875" height="898" alt="image" src="https://github.com/user-attachments/assets/ea635839-3c3d-40f0-8f98-9f136c417702" />
 
 ---
 
@@ -60,6 +61,11 @@ Cette plateforme vise à **digitaliser**, **simplifier** et **sécuriser** ces p
 - Consultation des candidatures
 - Suivi des stagiaires
 - Gestion des stages
+<img width="1878" height="897" alt="image" src="https://github.com/user-attachments/assets/ba0f6d6f-9917-462e-a763-76bd53a20730" />
+les utilisateurs :
+<img width="1875" height="896" alt="image" src="https://github.com/user-attachments/assets/737ab7f5-75d1-423b-a0f8-25b8d452a150" />
+convention :
+<img width="1875" height="880" alt="image" src="https://github.com/user-attachments/assets/2ce745c1-4c55-4ad0-9fa8-12e294abf0d5" />
 
 ---
 
@@ -69,6 +75,7 @@ Cette plateforme vise à **digitaliser**, **simplifier** et **sécuriser** ces p
 - Gestion des rôles
 - Logs système
 - Supervision de la plateforme
+<img width="1882" height="900" alt="image" src="https://github.com/user-attachments/assets/27a76aa3-59f8-4126-b787-5ca925bb47fc" />
 
 ---
 
