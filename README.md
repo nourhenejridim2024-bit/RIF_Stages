@@ -1,7 +1,7 @@
 # 🎓 Rif-Stages-Plateforme
 
 Plateforme digitale de gestion des stages académiques.
-<img width="1877" height="835" alt="image" src="https://github.com/user-attachments/assets/c19d1e87-d113-4f67-83ff-f0430bce3254" />
+<img width="1871" height="830" alt="image" src="https://github.com/user-attachments/assets/8a7be831-fdfe-42fa-bc35-307e1755d88d" />
 
 ---
 
