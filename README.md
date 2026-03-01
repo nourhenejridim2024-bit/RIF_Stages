@@ -67,6 +67,7 @@ Logs système :
 - Accès aux conventions
 - Onboarding
 - Évaluation
+<img width="1875" height="898" alt="image" src="https://github.com/user-attachments/assets/5916c98b-7501-42ea-b62b-79ae470eaa04" />
 
 ---
 
