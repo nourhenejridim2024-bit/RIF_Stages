@@ -16,7 +16,7 @@ Plateforme digitale de gestion des stages académiques.
 ✔ Suivi académique  
 ✔ Évaluations  
 
-La plateforme connecte les **stagiaires**, **universités**, **entreprises**, et **administrateurs** dans un environnement unique.
+La plateforme connecte les **stagiaires**, **universités**, **entreprises**, **tuteur**, et **administrateurs** dans un environnement unique.
 
 ---
 
@@ -67,7 +67,6 @@ Logs système :
 - Accès aux conventions
 - Onboarding
 - Évaluation
-<img width="1875" height="898" alt="image" src="https://github.com/user-attachments/assets/ea635839-3c3d-40f0-8f98-9f136c417702" />
 
 ---
 
